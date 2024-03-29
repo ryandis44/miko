@@ -10,7 +10,7 @@ discord.py==2.3.2
 # git+https://github.com/Rapptz/discord.py@d34a88411d3d973453d80128ab924f6aca197995
 discord.py-Console==0.1.2
 lavalink==4.0.6
-Pillow==9.3.0
+pillow==10.2.0
 pyarr==3.1.3
 openai==0.27.1
 aiomysql==0.2.0
