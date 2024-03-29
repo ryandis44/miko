@@ -8,7 +8,7 @@ import time
 import aiohttp
 import discord
 from Database.UserAttributes import Playtime
-from Music.LavalinkClient import AUDIO_SESSIONS
+# from Music.LavalinkClient import AUDIO_SESSIONS
 from Database.database_class import AsyncDatabase
 from Database.RedisCache import RedisCache
 from Leveling.LevelClass import LevelClass

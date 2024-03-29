@@ -15,7 +15,7 @@ from Presence.playtime import find_type_playing, has_app_id, identify_current_ap
 from misc.misc import get_user_object
 from Database.GuildObjects import MikoMember
 from Polls.UI import active_polls
-from Music.LavalinkClient import AUDIO_SESSIONS
+# from Music.LavalinkClient import AUDIO_SESSIONS
 load_dotenv()
 
 db = AsyncDatabase("cogs.debugger.py")

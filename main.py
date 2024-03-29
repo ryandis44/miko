@@ -30,7 +30,7 @@ from utils.HandleInterrupt import interrupt, nullify_restore_time
 from Voice.track_voice import fetch_voicetime_sessions, process_voice_state
 from utils.parse_inventory import check_for_karuta, parse_inventory
 from Database.RedisCache import connect_redis
-from Music.LavalinkClient import AUDIO_SESSIONS
+# from Music.LavalinkClient import AUDIO_SESSIONS
 from Polls.UI import active_polls
 from Database.RedisCache import RedisCache
 r = RedisCache('main.py')
