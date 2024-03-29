@@ -9,7 +9,7 @@ num2words==0.5.13
 discord.py==2.3.1
 # git+https://github.com/Rapptz/discord.py@d34a88411d3d973453d80128ab924f6aca197995
 discord.py-Console==0.1.2
-lavalink==5.3.0
+# lavalink==5.3.0
 pillow==10.2.0
 pyarr==5.2.0
 openai==1.14.3
