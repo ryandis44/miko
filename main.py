@@ -419,7 +419,7 @@ initial = True
 async def on_ready():
     global initial
     # await client.load_extension(f'MusicCog.MusicPlayer')
-    await load_extensions_on_ready()
+    # await load_extensions_on_ready()
     await client.load_extension(f'Leveling.LevelCog')
     await client.load_extension(f'Plex.PlexCog')
     set_async_client(client)
