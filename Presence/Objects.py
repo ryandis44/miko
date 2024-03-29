@@ -37,9 +37,9 @@ class PresenceUpdate:
     
     '''
     async def ainit(self) -> None:
-        if not self.__ensure_unique_update(): return # duplicate detection
-        # async with await self.__presence_lock(): # prevent dupes
-        await self.__determine_update()
+        # if not self.__ensure_unique_update(): return # duplicate detection
+        async with await self.__presence_lock(): # prevent dupes
+            await self.__determine_update()
             
     
     async def __determine_update(self) -> None:
