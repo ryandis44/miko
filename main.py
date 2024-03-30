@@ -340,7 +340,7 @@ async def on_message(message: discord.Message):
                     if command in del_karuta_commands:
                         await message.delete()
 
-    '''
+    """
     # Determine if message sent is in bot channel, and if so, determine whether it is
     # from karuta and is a drop
     img_ext = ['.jpg', '.webp', '.png', '.jpeg']
@@ -353,7 +353,7 @@ async def on_message(message: discord.Message):
                         await asyncio.sleep(5)
                         await message.add_reaction('<:verifiedblue:963658235628359710>')
                         break
-    '''
+    """
     await MikoGPT(mm=mm).ainit()
     # elif (await mm.channel.profile).feature_enabled('REPLY_TO_MENTION') == 1:
     #         await message.reply(
