@@ -1,7 +1,7 @@
 import asyncio
 from io import BytesIO
 import time
-import openai
+from openai import OpenAI
 import tiktoken
 import discord
 import re
@@ -11,8 +11,7 @@ from Database.GuildObjects import CachedMessage, MikoMember, GuildProfile, Async
 db = AsyncDatabase('OpenAI.ai.py')
 r = RedisCache('OpenAI.ai.py')
 
-openai.api_key = tunables('OPENAI_API_KEY')
-
+openai_client = OpenAI(api_key=tunables('OPENAI_API_KEY'))
 
 class RegenerateButton(discord.ui.Button):
     def __init__(self) -> None:
@@ -40,11 +39,11 @@ class CancelButton(discord.ui.Button):
             row=1,
             disabled=False
         )
-    
+
     async def callback(self, interaction: discord.Interaction) -> None:
         await self.view.cancel(interaction)
-        
-        
+
+
 class MikoGPT(discord.ui.View):
     def __init__(self, mm: MikoMessage):
         super().__init__(timeout=tunables('GLOBAL_VIEW_TIMEOUT'))
@@ -66,30 +65,30 @@ class MikoGPT(discord.ui.View):
             discord.ChannelType.news_thread
         ]
         self.add_item(CancelButton())
-    
+
     async def on_timeout(self) -> None:
         # self.clear_items()
         # try: await self.msg.edit(view=self)
         # except: pass
         self.stop()
-    
-    
+
+
     async def cancel(self, interaction: discord.Interaction) -> None:
         cancel_test = (interaction.user.id == self.mm.user.user.id) or \
             (interaction.channel.permissions_for(interaction.user).manage_messages)
-        
+
         if not cancel_test: return
-        
+
         await self.msg.delete()
         await self.openai_response.close()
-    
-    
+
+
     async def ainit(self) -> None:
         if self.mm.message.author.bot or self.mm.message.content.startswith("!"): return
         self.gpt_threads = await self.mm.channel.gpt_threads
-        
+
         self.response['personality'] = await self.mm.channel.gpt_personality
-        
+
         self.t = discord.ChannelType
         match self.ctype:
             case self.t.text | self.t.voice | self.t.news | self.t.forum | self.t.stage_voice:
@@ -104,28 +103,28 @@ class MikoGPT(discord.ui.View):
                                 )
                                 await self.on_timeout()
                                 return
-                    
+
                 else:
                     await self.on_timeout()
                     return
-                
-                
+
+
             case self.t.public_thread | self.t.private_thread | self.t.news_thread:
                 if not tunables('MESSAGE_CACHING') or not tunables('FEATURE_ENABLED_CHATGPT_THREADS'): return
-                
+
                 try: await self.channel.fetch_member(self.mm.user.client.user.id)
                 except: return
-                
+
                 if (len(self.mm.message.content) == 0 and len(self.mm.message.attachments) == 0) or \
                     self.response['personality'] is None: return
-                
+
                 if re.match(r"^((<@\d{15,22}>)\s*)+$", self.mm.message.content): return
             case _: return
-        
+
         if not await self.__fetch_chats(): return
         if not await self.__send_reply(): return
         await self.respond()
-        
+
     async def __send_reply(self) -> bool:
         if self.response['personality'] is None:
             if self.mm.message.reference is None:
@@ -136,9 +135,9 @@ class MikoGPT(discord.ui.View):
                 )
                 return False
             else: return False
-        
-        
-        
+
+
+
         if self.gpt_threads == "ALWAYS" and tunables('MESSAGE_CACHING'):
             if await self.__create_thread(
                 content=(
@@ -150,8 +149,8 @@ class MikoGPT(discord.ui.View):
             ):
                 self.response_extra_content = self.__thread_info()
                 return True
-        
-        
+
+
         self.msg = await self.mm.message.reply(
             content=tunables('LOADING_EMOJI'),
             silent=True,
@@ -159,13 +158,13 @@ class MikoGPT(discord.ui.View):
             view=self
         )
         return True
-    
+
     def __thread_created_info(self) -> str:
         return (
             f"I created a private thread that only you and I can access, {self.mm.message.author.mention}.\n"
             f"→ Jump to that thread: {self.thread.jump_url}"
         )
-    
+
     def __thread_info(self) -> str:
         return (
             f"Hello {self.mm.message.author.mention}! I created a private thread that only you and "
@@ -180,7 +179,7 @@ class MikoGPT(discord.ui.View):
             "(for adding people to this thread)."
             "\n\n"
         )
-    
+
     async def __check_attachments(self, message: discord.Message|CachedMessage) -> str|None:
         if len(message.attachments) == 0: return None
         if message.attachments[0].filename != "message.txt": return None
@@ -188,40 +187,40 @@ class MikoGPT(discord.ui.View):
         except:
             try: return message.attachments[0].data
             except: return None
-    
+
 
     async def __fetch_chats(self) -> bool:
-        
+
         # If not in thread, do this
         refs = await self.__fetch_replies()
-        
+
         if len(refs) == 0:
             if self.ctype in THREAD_TYPES:
                 refs = await self.__fetch_thread_messages()
-        
+
         try:
-            
+
             '''
             The CHATGPT_BUFFER_CONTEXT_AMOUNT is used to ensure ChatGPT's entire
             response is sent. ChatGPT 3.5 has a max context length of 4097 tokens
             and this buffer allocates x amount of tokens to the response itself.
             '''
             cnt = tunables('CHATGPT_BUFFER_CONTEXT_AMOUNT')
-            
+
             # Add latest message to end of chat list
             mssg = f"{self.mm.user.user.mention}: {' '.join(self.__remove_mention(self.mm.message.content.split()))}"
             if len(self.mm.message.attachments) > 0:
                 val = await self.__check_attachments(message=self.mm.message)
                 if val is not None:
                     mssg = f"{mssg} {val}"
-            
+
             system_personality = {"role": "system", "content": self.response['personality']}
             user_current_content = {"role": "user", "content": mssg}
             cnt += self.__num_tokens_from_messages(messages=[system_personality, user_current_content])
-            
+
             self.chat.append(user_current_content)
-            
-    
+
+
             # Determine the string to append to chat or
             # cancel interaction if any replied messages
             # cannot be read.
@@ -247,17 +246,17 @@ class MikoGPT(discord.ui.View):
                             if embed.description == "" or embed.description is None: continue
                             mssg += " " + embed.description
                     except: pass
-                
-                
+
+
                 # Decode message.txt, if applicable
                 if len(m.attachments) > 0:
                     val = await self.__check_attachments(message=m)
                     if val is not None:
                         mssg = f"{mssg} {val}"
                     elif mssg == "" or mssg is None or mssg == []: return False # Could cause issues. Replace with continue if so
-                
 
-                
+
+
                 # Add message to chat list
                 if m.author.id == self.mm.channel.guild.me.id:
                     ct = {"role": "assistant", "content": mssg}
@@ -265,12 +264,12 @@ class MikoGPT(discord.ui.View):
                     # If message is >4000 tokens, split responses
                     # into multiple list items. dont know if needed yet
                     ct = {"role": "user", "content": f"{m.author.mention}: {mssg}"}
-                    
-                    
+
+
                 cnt += self.__num_tokens_from_messages(messages=[ct])
                 if cnt >= tunables('CHATGPT_MAX_CONTEXT_LENGTH'): break 
                 self.chat.append(ct)
-        
+
 
             self.chat.append(system_personality)
             self.chat.reverse()
@@ -278,8 +277,8 @@ class MikoGPT(discord.ui.View):
         except Exception as e:
             print(f"Error whilst fetching chats [ChatGPT]: {e}")
             return False
-    
-    
+
+
     async def __fetch_thread_messages(self) -> list:
         if not tunables('MESSAGE_CACHING'): return
         messages = await r.search(
@@ -288,26 +287,26 @@ class MikoGPT(discord.ui.View):
             index="by_thread_id",
             limit=tunables('CHATGPT_THREAD_MESSAGE_LIMIT')
         )
-        
+
         refs = []
         for m in messages:
             m = CachedMessage(m=loads(m['json']))
             if (m.content != "" or len(m.attachments) > 0 or len(m.embeds) > 0) and m.id != self.mm.message.id:
                 refs.append(m)
         return refs
-    
-    
+
+
     async def __fetch_replies(self) -> list:
         try:
             refs = []
             if self.mm.message.reference is not None:
-                
+
                 refs = [self.mm.message.reference.resolved]
-                
+
                 i = 0
                 while True:
                     if refs[-1].reference is not None and i <= tunables('CHATGPT_MAX_REPLIES_CHAIN'):
-                        
+
                         cmsg = CachedMessage(message_id=refs[-1].reference.message_id)
                         await cmsg.ainit()
                         if refs[-1].reference.cached_message is not None:
@@ -324,20 +323,20 @@ class MikoGPT(discord.ui.View):
                         refs.append(m)
                     else: break
                     i+=1
-                
+
             return refs
         except Exception as e:
             print(f"Error whilst fetching message replies [ChatGPT]: {e}")
             return []
-              
+
     def __remove_mention(self, msg: list) -> list:
         for i, word in enumerate(msg):
             if word in [f"<@{str(self.mm.channel.client.user.id)}>"]:
                 # Remove word mentioning Miko
                 msg.pop(i)
         return msg
-    
-    
+
+
     def __num_tokens_from_messages(self, messages: list):
         """Return the number of tokens used by a list of messages."""
         try:
@@ -378,13 +377,13 @@ class MikoGPT(discord.ui.View):
                     num_tokens += tokens_per_name
         num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
         return num_tokens
-    
-    
+
+
     async def respond(self, retries=0) -> None:
         self.clear_items()
         # if await self.mm.channel.gpt_mode == "NORMAL":
         #     self.add_item(RegenerateButton())
-        
+
         # print("*************")
         # print(f"GPT Threads Mode: {self.gpt_threads}")
         # for i, c in enumerate(self.chat):
@@ -394,17 +393,17 @@ class MikoGPT(discord.ui.View):
         try:
             self.openai_response = asyncio.to_thread(self.__openai_interaction)
             await self.openai_response
-            
+
             resp_len = len(self.response['data'])
             if resp_len >= 750 and resp_len <= 3999:
                 embed = await self.__embed()
-                
-                
+
+
                 thread_content = (self.__thread_info() +
                     "Please see my response below:"
                 )
                 if await self.__create_thread(content=thread_content, embed=await self.__embed(), attachments=None): return
-                
+
                 await self.msg.edit(
                         content=None if self.response_extra_content == "" else self.response_extra_content + "Please see my response below:",
                         embed=embed,
@@ -415,11 +414,11 @@ class MikoGPT(discord.ui.View):
                         view=self
                     )
                 return
-                
+
             elif resp_len >= 4000:
                 b = bytes(self.response['data'], 'utf-8')
                 attachments = [discord.File(BytesIO(b), "message.txt")]
-                
+
                 if await self.__create_thread(
                         content=(self.__thread_info() +
                             "The response to your prompt was too long. I have sent it in this "
@@ -429,7 +428,7 @@ class MikoGPT(discord.ui.View):
                         embed=None,
                         attachments=attachments
                     ): return
-                
+
                 await self.msg.edit(
                     content=(self.response_extra_content +
                             "The response to your prompt was too long. I have sent it in this "
@@ -455,19 +454,19 @@ class MikoGPT(discord.ui.View):
             )
             await self.mm.user.increment_statistic('REPLY_TO_MENTION_OPENAI')
         except Exception as e:
-            
+
             if retries <= 5 and type(Exception) is type:
-                
+
                 try:
                     await self.msg.edit(content=f"`Error. Retrying...`")
                 except: pass
-                
+
                 await asyncio.sleep(2)
-                
+
                 try:
                     await self.msg.edit(content=tunables('LOADING_EMOJI'))
                 except: pass
-                
+
                 await self.respond(retries + 1)
                 return
             await self.mm.user.increment_statistic('REPLY_TO_MENTION_OPENAI_REJECT')
@@ -481,7 +480,7 @@ class MikoGPT(discord.ui.View):
                     view=None
                 )
             except: pass
-            
+
     async def __create_thread(self, content: str, embed: discord.Embed, attachments) -> bool:
 
         if self.gpt_threads is None or (self.msg is not None and self.msg.channel.type in THREAD_TYPES): return False
@@ -506,7 +505,7 @@ class MikoGPT(discord.ui.View):
                 name = self.__remove_mention(self.mm.message.content.split())
                 if len(name) > 1: name = ' '.join(name)
                 else: name = ''.join(name)
-                
+
             self.thread = await self.channel.create_thread(
                 name=name[0:90] if len(name) < 89 else name[0:90] + "...",
                 auto_archive_duration=60,
@@ -525,7 +524,7 @@ class MikoGPT(discord.ui.View):
                 ),
                 view=self
             )
-            
+
             if self.msg is None:
                 await self.mm.message.reply(
                     content=self.__thread_created_info(),
@@ -534,7 +533,7 @@ class MikoGPT(discord.ui.View):
                 )
                 self.msg = temp
                 return True
-            
+
             await self.msg.edit(
                 embed=None,
                 view=None,
@@ -542,12 +541,12 @@ class MikoGPT(discord.ui.View):
             )
             return True
         return False
-        
+
     async def __embed(self) -> discord.Embed:
         temp = []
 
         temp.append(f"{self.response['data']}")
-        
+
         embed = discord.Embed(
             description=''.join(temp),
             color=GLOBAL_EMBED_COLOR
@@ -560,12 +559,12 @@ class MikoGPT(discord.ui.View):
             text=f"{self.mm.channel.client.user.name} ChatGPT 4.0 Integration v1.1"
         )
         return embed
-    
+
     def __openai_interaction(self) -> None:
-        resp = openai.ChatCompletion.create(
-            model=self.model,
-            messages=self.chat
-        )
-        
+        resp = openai_client.chat.completions.create(
+                model=self.model,
+                messages=self.chat
+            )
+
         text = resp.choices[0].message.content
         self.response['data'] = text
