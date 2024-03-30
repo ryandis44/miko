@@ -340,50 +340,7 @@ async def on_message(message: discord.Message):
                     if command in del_karuta_commands:
                         await message.delete()
 
-    """
-    # Determine if message sent is in bot channel, and if so, determine whether it is
-    # from karuta and is a drop
-    img_ext = ['.jpg', '.webp', '.png', '.jpeg']
-    drop_regex = r"<@\d{15,22}> is dropping [3-4] cards!"
-    if message.channel.name == 'baruta-kots' and message.author.id == karuta_id:
-        if re.match(drop_regex, message.content.lower()):
-            if len(message.attachments) > 0:
-                for ext in img_ext:
-                    if (message.attachments[0].url.lower().endswith(ext)):
-                        await asyncio.sleep(5)
-                        await message.add_reaction('<:verifiedblue:963658235628359710>')
-                        break
-    """
     await MikoGPT(mm=mm).ainit()
-    # elif (await mm.channel.profile).feature_enabled('REPLY_TO_MENTION') == 1:
-    #         await message.reply(
-    #             content=f"Please use {tunables('SLASH_COMMAND_SUGGEST_HELP')} for help.",
-    #             silent=True
-    #         )
-    
-    # # Respond to being mentioned
-    # if len(message.content) > 0 and str(client.user.id) in message.content.split()[0] and message.author.id != client.user.id or \
-    #     (message.reference is not None and message.reference.resolved is not None and \
-    #         message.reference.resolved.author.id == client.user.id):
-        
-    #     if (await mm.channel.profile).feature_enabled('CHATGPT') == 1:
-
-    #         # Send help menu if only @ ing Miko
-    #         if len(message.content.split()) <= 1 and message.content == f"<@{str(client.user.id)}>":
-    #             await message.reply(
-    #                 content=f"Please use {tunables('SLASH_COMMAND_SUGGEST_HELP')} for help.",
-    #                 silent=True
-    #             )
-    #             return
-
-
-        
-    #     # Basic response
-    #     elif (await mm.channel.profile).feature_enabled('REPLY_TO_MENTION') == 1:
-    #         await message.reply(
-    #             content=f"Please use {tunables('SLASH_COMMAND_SUGGEST_HELP')} for help.",
-    #             silent=True
-    #         )
 
     return
 
