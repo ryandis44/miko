@@ -261,14 +261,15 @@ async def on_voice_state_update(member: discord.Member, bef: discord.VoiceState,
     u = MikoMember(user=member, client=client)
     await u.ainit()
     
+    '''Temporarily disabled until Lavalink supports Python 3.12'''
     # if bot is removed from voice channel, cleanup and delete voice_client object
     # this prevents the bot from thinking it is still in vc after being
     # disconnected
-    if bef.channel is not None and cur.channel is None and member == client.user:
-        try: sesh = AUDIO_SESSIONS[member.guild.id]
-        except: sesh = None
-        if sesh is not None:
-            await sesh.stop()
+    # if bef.channel is not None and cur.channel is None and member == client.user:
+    #     try: sesh = AUDIO_SESSIONS[member.guild.id]
+    #     except: sesh = None
+    #     if sesh is not None:
+    #         await sesh.stop()
     
     if (await u.profile).feature_enabled('TRACK_VOICETIME') != 1: return
     if not running: return
@@ -341,8 +342,6 @@ async def on_message(message: discord.Message):
                         await message.delete()
 
     await MikoGPT(mm=mm).ainit()
-
-    return
 
 
 async def load_extensions():
