@@ -219,7 +219,7 @@ class ActivityUpdate:
         # list for this user
         if val is None:
             await g.ainit()
-            g.test = "Turds"
+            # g.test = "Turds"
             PLAYTIME_SESSIONS[self.u.user.id] = {
                 'sessions': {activity['app'].id: g}
             }
