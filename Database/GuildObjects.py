@@ -1379,7 +1379,7 @@ class MikoMessage():
         return self.message.channel.type not in self.threads
     
     async def handle_rename_hell(self) -> None:
-        if await self.channel.guild_messages % 20 == 0 and self.message.channel.id != 963928489248063539:
+        if await self.channel.guild_messages % 20 == 0 and self.message.channel.id != 963928489248063539 and tunables('FEATURE_ENABLED_RENAME_HELL'):
             users = await self.user.renamehell_members
             if users != [] and users is not None:
                 await self.message.add_reaction('<:nametag:1011514395630764032>')
