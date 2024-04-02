@@ -160,9 +160,9 @@ class SettingsView(discord.ui.View):
         # For setting default selected item to
         # item that is set by user
         
+        # ChatGPT and other permission-based options are enforced here
         o = copy.deepcopy(s.options)
         permission_level = await self.u.bot_permission_level
-        print(f"Your permission level: {permission_level}")
         x = 0
         options_len = len(o)
         while True:
@@ -170,7 +170,6 @@ class SettingsView(discord.ui.View):
             
             if type(o[x][0]) == int:
                 if o[x][0] > permission_level:
-                    print(f"Removing {o[x][1]}. Permission level: {o[x][0]}")
                     del o[x]
                     options_len-=1
                     x = 0
@@ -184,24 +183,9 @@ class SettingsView(discord.ui.View):
                 o[x][1].default = True
             else: o[x][1].default = False
             x += 1
+        ###
                 
         s.options = o
-        
-        # for i, option_arr in enumerate(s.options):
-        #     for option in option_arr:
-        #         if type(option) == int:
-        #             if option > permission_level:
-        #                 print(f"Removing {option_arr[1]}. Permission level: {option}")
-        #                 del s.options[i]
-        #             continue
-                    
-        #         val = await s.value(self.channel_id)
-        #         if type(val) == bool:
-        #             if val: val = "TRUE"
-        #             else: val = "FALSE"
-        #         if option.value == val:
-        #             option.default = True
-        #         else: option.default = False
         
         self.clear_items()
         
