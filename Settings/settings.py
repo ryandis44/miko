@@ -13,7 +13,7 @@ class Setting:
         emoji: str,
         table: str,
         col: str,
-        options: list = None
+        options: list[discord.SelectOption] = None
     ) -> None:
 
         self.u = u
@@ -22,6 +22,7 @@ class Setting:
         self.emoji = emoji
         self.table = table
         self.col = col
+        self.permission_level = 0
         self.modifiable = p.feature_enabled(f'{col.upper()}')
         self.modifiable = {
             'val': True if self.modifiable == 1 else False,

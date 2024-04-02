@@ -165,6 +165,10 @@ class SettingsView(discord.ui.View):
             else: option.default = False
         
         self.clear_items()
+        
+        # ChatGPT and other permission_level items have their permissions enforced here
+        
+        
         self.add_item(ChooseState(setting=s))
         self.add_item(BackToHome())
         await self.msg.edit(content=None, view=self, embed=embed)

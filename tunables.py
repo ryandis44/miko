@@ -81,8 +81,13 @@ def configure_tunables() -> None:
                     emoji=d['emoji']
                 )
             )
-            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = d['prompt']
-        except Exception as e: print(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
+            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {'prompt': d['prompt'], 'model': d['model'], 'permission_level': d['permission_level']}
+        except Exception as e:
+            try:
+                TUNABLES['OPENAI_PERSONALITIES'].pop()
+                del TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"]
+            except: pass
+            print(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
 
 
 

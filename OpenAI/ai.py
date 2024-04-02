@@ -52,7 +52,7 @@ class MikoGPT(discord.ui.View):
         self.response_extra_content = ""
         self.channel = mm.message.channel
         self.ctype = self.channel.type
-        self.model = tunables('CHATGPT_MODEL')
+        self.model = tunables('CHATGPT_GENERIC_MODEL')
 
         self.msg: discord.Message = None
         self.response = {
@@ -87,7 +87,9 @@ class MikoGPT(discord.ui.View):
         if self.mm.message.author.bot or self.mm.message.content.startswith("!"): return
         self.gpt_threads = await self.mm.channel.gpt_threads
 
-        self.response['personality'] = await self.mm.channel.gpt_personality
+        __ = await self.mm.channel.gpt_personality
+        self.response['personality'] = __['prompt']
+        self.model = __['model']
 
         self.t = discord.ChannelType
         match self.ctype:
@@ -386,6 +388,7 @@ class MikoGPT(discord.ui.View):
 
         # print("*************")
         # print(f"GPT Threads Mode: {self.gpt_threads}")
+        # print(f"GPT Model: {self.model}")
         # for i, c in enumerate(self.chat):
         #     print(f">> {i+1} {c}")
         # print("*************")
