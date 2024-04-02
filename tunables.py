@@ -84,7 +84,13 @@ def configure_tunables() -> None:
                     )
                 ]
             )
-            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {'prompt': d['prompt'], 'model': d['model'], 'value': d['value']}
+            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {
+                'prompt': d['prompt'],
+                'model': d['model'],
+                'value': d['value'],
+                'input_tokens': d['input_tokens'],
+                'response_tokens': d['response_tokens']
+            }
         except Exception as e:
             try:
                 TUNABLES['OPENAI_PERSONALITIES'].pop()
