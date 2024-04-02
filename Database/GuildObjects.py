@@ -795,7 +795,7 @@ class MikoMember(MikoGuild):
     def playtime(self) -> Playtime:
         return Playtime(u=self)
     @property
-    async def bot_permission_level(self):
+    async def bot_permission_level(self) -> int:
         val = await ago.execute(
             "SELECT bot_permission_level FROM USERS WHERE "
             f"user_id='{self.user.id}' "

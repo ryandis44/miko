@@ -74,14 +74,17 @@ def configure_tunables() -> None:
     for d in temp:
         try:
             TUNABLES['OPENAI_PERSONALITIES'].append(
-                SelectOption(
-                    label=d['label'],
-                    description=d['description'],
-                    value=d['value'],
-                    emoji=d['emoji']
-                )
+                [
+                    int(d['permission_level']),
+                    SelectOption(
+                        label=d['label'],
+                        description=d['description'],
+                        value=d['value'],
+                        emoji=d['emoji']
+                    )
+                ]
             )
-            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {'prompt': d['prompt'], 'model': d['model'], 'permission_level': d['permission_level']}
+            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {'prompt': d['prompt'], 'model': d['model']}
         except Exception as e:
             try:
                 TUNABLES['OPENAI_PERSONALITIES'].pop()

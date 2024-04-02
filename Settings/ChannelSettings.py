@@ -16,7 +16,7 @@ class ChatGPT(Setting):
             u=u,
             p=p,
             name = "ChatGPT Integration",
-            desc = "**WORK IN PROGRESS BETA FEATURE. May not always work as intended.** Choose to enable ChatGPT Integration and what personality to use",
+            desc = "Choose to enable ChatGPT Integration and what personality to use",
             emoji = "🌐",
             table = "CHANNELS",
             col = "chatgpt",
@@ -35,23 +35,32 @@ class ChatGPTThreads(Setting):
             table = "CHANNELS",
             col = "chatgpt_threads",
             options=[
-                discord.SelectOption(
-                    label=f"Enabled: Always",
-                    description=f"Create a thread for every response.",
-                    value="ALWAYS",
-                    emoji="🟢"
-                ),
-                discord.SelectOption(
-                    label=f"Enabled: Auto (default)",
-                    description=f"Let Miko decide when to create a thread.",
-                    value="AUTO",
-                    emoji="🤖"
-                ),
-                discord.SelectOption(
-                    label=f"Disabled",
-                    description=f"Always respond in this channel.",
-                    value="DISABLED",
-                    emoji="❌"
-                )
+                [
+                    1,
+                    discord.SelectOption(
+                        label=f"Enabled: Always",
+                        description=f"Create a thread for every response.",
+                        value="ALWAYS",
+                        emoji="🟢"
+                    )
+                ],
+                [
+                    1,
+                    discord.SelectOption(
+                        label=f"Enabled: Auto (default)",
+                        description=f"Let Miko decide when to create a thread.",
+                        value="AUTO",
+                        emoji="🤖"
+                    )
+                ],
+                [
+                    0,
+                    discord.SelectOption(
+                        label=f"Disabled",
+                        description=f"Always respond in this channel.",
+                        value="DISABLED",
+                        emoji="❌"
+                    )
+                ]
             ]
         )

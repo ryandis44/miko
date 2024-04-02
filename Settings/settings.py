@@ -13,7 +13,7 @@ class Setting:
         emoji: str,
         table: str,
         col: str,
-        options: list[discord.SelectOption] = None
+        options: list[int, discord.SelectOption] = None
     ) -> None:
 
         self.u = u
@@ -22,7 +22,7 @@ class Setting:
         self.emoji = emoji
         self.table = table
         self.col = col
-        self.permission_level = 0
+        self.permission_level = 1
         self.modifiable = p.feature_enabled(f'{col.upper()}')
         self.modifiable = {
             'val': True if self.modifiable == 1 else False,
@@ -40,18 +40,24 @@ class Setting:
                 case _: ctx = "for yourself."
             
             self.options = [
-                discord.SelectOption(
-                    label=f"Enable {self.name}",
-                    description=f"Select to enable {self.name} {ctx}",
-                    value="TRUE",
-                    emoji="☑"
-                ),
-                discord.SelectOption(
-                    label=f"Disable {self.name}",
-                    description=f"Select to disable {self.name} {ctx}",
-                    value="FALSE",
-                    emoji="❌"
-                )
+                [
+                    self.permission_level,
+                    discord.SelectOption(
+                        label=f"Enable {self.name}",
+                        description=f"Select to enable {self.name} {ctx}",
+                        value="TRUE",
+                        emoji="☑"
+                    )
+                ],
+                [
+                    0,
+                    discord.SelectOption(
+                        label=f"Disable {self.name}",
+                        description=f"Select to disable {self.name} {ctx}",
+                        value="FALSE",
+                        emoji="❌"
+                    )
+                ]
             ]
     
     

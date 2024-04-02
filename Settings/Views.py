@@ -1,3 +1,4 @@
+import copy
 import discord
 from Settings.ChannelSettings import all_channel_settings
 from Settings.GuildSettings import all_guild_settings
@@ -132,6 +133,9 @@ class SettingsView(discord.ui.View):
         await self.msg.edit(content=None, view=self, embed=embed)
         
     async def setting_page(self, s: Setting) -> None:
+        
+        # print(s.options)
+        
         temp = []
         if self.scope['type'] == "CHANNELS":
             msg = f" *in* {self.channel.mention}"
@@ -155,19 +159,51 @@ class SettingsView(discord.ui.View):
         
         # For setting default selected item to
         # item that is set by user
-        for option in s.options:
+        
+        o = copy.deepcopy(s.options)
+        permission_level = await self.u.bot_permission_level
+        print(f"Your permission level: {permission_level}")
+        x = 0
+        options_len = len(o)
+        while True:
+            if x >= options_len: break
+            
+            if type(o[x][0]) == int:
+                if o[x][0] > permission_level:
+                    print(f"Removing {o[x][1]}. Permission level: {o[x][0]}")
+                    del o[x]
+                    options_len-=1
+                    x = 0
+                    continue
+            
             val = await s.value(self.channel_id)
             if type(val) == bool:
                 if val: val = "TRUE"
                 else: val = "FALSE"
-            if option.value == val:
-                option.default = True
-            else: option.default = False
+            if o[x][1].value == val:
+                o[x][1].default = True
+            else: o[x][1].default = False
+            x += 1
+                
+        s.options = o
+        
+        # for i, option_arr in enumerate(s.options):
+        #     for option in option_arr:
+        #         if type(option) == int:
+        #             if option > permission_level:
+        #                 print(f"Removing {option_arr[1]}. Permission level: {option}")
+        #                 del s.options[i]
+        #             continue
+                    
+        #         val = await s.value(self.channel_id)
+        #         if type(val) == bool:
+        #             if val: val = "TRUE"
+        #             else: val = "FALSE"
+        #         if option.value == val:
+        #             option.default = True
+        #         else: option.default = False
         
         self.clear_items()
-        
-        # ChatGPT and other permission_level items have their permissions enforced here
-        
         
         self.add_item(ChooseState(setting=s))
         self.add_item(BackToHome())
@@ -253,7 +289,7 @@ class ChooseState(discord.ui.Select):
             placeholder="Select an option",
             max_values=1,
             min_values=1,
-            options=setting.options,
+            options=[option[1] for option in setting.options],
             row=1,
             disabled=not setting.modifiable['val']
         )
