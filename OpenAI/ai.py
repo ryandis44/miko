@@ -88,6 +88,8 @@ class MikoGPT(discord.ui.View):
         self.gpt_threads = await self.mm.channel.gpt_threads
 
         __ = await self.mm.channel.gpt_personality
+        if __ is None: return # For 'DISABLED'
+        
         self.response['personality'] = __['prompt']
         self.model = __['model']
         self.value = __['value']

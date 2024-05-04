@@ -18,9 +18,9 @@ class PlexCog(commands.Cog):
         self.client: discord.Client = client
 
     group = app_commands.Group(name="plex", description="Plex related commands", guild_ids=[890638458211680256])
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @group.command(name="calendar", description=f"{os.getenv('APP_CMD_PREFIX')}Displays upcoming Plex Calendar")

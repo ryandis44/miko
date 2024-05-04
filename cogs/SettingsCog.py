@@ -17,9 +17,9 @@ class SettingsCog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @app_commands.command(name="settings", description=f"{os.getenv('APP_CMD_PREFIX')}Modify Miko settings for yourself or this guild (if you have permission)")

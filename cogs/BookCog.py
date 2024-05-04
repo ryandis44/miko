@@ -13,9 +13,9 @@ class BookCog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @app_commands.command(name="book", description=f"{os.getenv('APP_CMD_PREFIX')}View/Edit the Book [YMCA Servers Only]")

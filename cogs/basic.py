@@ -10,7 +10,6 @@ from Database.RedisCache import RedisCache
 from Plex.background import end_of_day_int
 from Plex.embeds import plex_update_2_2
 from Database.database import add_bot, add_react_all_to_user, add_react_to_user, add_rename_any_user, del_bot, del_react_all_to_user, del_react_to_user, del_rename_any_user, generic_list_embed, top_channels_embed_server, top_users_embed_server, user_info_embed
-from Presence.Objects import PRESENCE_UPDATES
 from YMCA.GreenBook.UI import BookView
 from misc.holiday_roles import get_holiday
 from misc.misc import time_elapsed, translate_mention

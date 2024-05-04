@@ -25,9 +25,9 @@ class PlaytimeCog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @app_commands.command(name="playtime", description=f"{os.getenv('APP_CMD_PREFIX')}View playtime for yourself or other people")

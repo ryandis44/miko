@@ -18,9 +18,9 @@ class Slash(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
     # Sync command cannot be a slash command because you have to sync slash commands, so we cannot sync
     # the sync command if we have not synced slash commands. Sync sync sync

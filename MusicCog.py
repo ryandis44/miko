@@ -93,9 +93,9 @@ class MusicCog(commands.Cog):
             if sesh is None: return
             await sesh.refresh_timestamp(event.position / 1000)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
     @app_commands.command(name="play", description=f"{os.getenv('APP_CMD_PREFIX')}Play a video or song from YouTube (other services to come)")
     @app_commands.guild_only

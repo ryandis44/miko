@@ -15,9 +15,9 @@ class dev_cog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
     @app_commands.command(name="dev", description=f"{os.getenv('APP_CMD_PREFIX')}Development commands")
     @app_commands.guilds(discord.Object(id=890638458211680256))

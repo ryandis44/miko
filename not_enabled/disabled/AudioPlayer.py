@@ -16,9 +16,9 @@ class AudioPlayerrr(commands.Cog):
     def __init__(self, client):
         self.client = client
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
     @app_commands.command(name="sound", description=f"{os.getenv('APP_CMD_PREFIX')}Play a video or song from YouTube or Spotify")
     @app_commands.guild_only

@@ -11,9 +11,9 @@ class ChecklistCog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @app_commands.command(name="checklist", description=f"{os.getenv('APP_CMD_PREFIX')}Open the Checklist [YMCA Servers Only]")

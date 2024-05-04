@@ -14,9 +14,9 @@ class PollCog(commands.Cog):
         self.client: discord.Client = client
 
     group = app_commands.Group(name="poll", description="Poll Commands")
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.tree = app_commands.CommandTree(self.client)
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @group.command(name="create", description=f"{os.getenv('APP_CMD_PREFIX')}Create a poll")
