@@ -241,13 +241,15 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild):
 # Playtime
 @client.event
 async def on_presence_update(before: discord.Member, cur: discord.Member):
-    if not tunables('EVENT_ENABLED_ON_PRESENCE_UPDATE'): return
-    if not running: return
-    u = MikoMember(user=cur, client=client)
-    await u.ainit()
-    await u.increment_statistic('PRESENCE_UPDATES')
-    p = PresenceUpdate(u=u, b=before, a=cur)
-    await p.ainit()
+    try:
+        if not tunables('EVENT_ENABLED_ON_PRESENCE_UPDATE'): return
+        if not running: return
+        u = MikoMember(user=cur, client=client)
+        await u.ainit()
+        await u.increment_statistic('PRESENCE_UPDATES')
+        p = PresenceUpdate(u=u, b=before, a=cur)
+        await p.ainit()
+    except Exception as e: print(f"\n\nError caught in 'on_presence_update': {e}\n\n")
 
 
 # Voicetime
