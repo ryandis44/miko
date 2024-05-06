@@ -281,8 +281,10 @@ async def on_voice_state_update(member: discord.Member, bef: discord.VoiceState,
 
 @client.event
 async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent) -> None:
-    if not tunables('EVENT_ENABLED_ON_RAW_MESSAGE_EDIT'): return
-    await RawMessageUpdate(payload=payload).ainit()
+    try:
+        if not tunables('EVENT_ENABLED_ON_RAW_MESSAGE_EDIT'): return
+        await RawMessageUpdate(payload=payload).ainit()
+    except Exception as e: print(f"Error in on_raw_message_edit: {e}")
 
 @client.event
 async def on_message(message: discord.Message):
@@ -397,7 +399,7 @@ async def on_ready():
 
 import logging
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))

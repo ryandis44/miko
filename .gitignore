@@ -7,8 +7,8 @@ npm-debug.log
 .DS_Store
 .npm
 .eslintcache
-logs/
-*.log
+discord.log
+logfile.log
 npm-debug.log*
 __pycache__
 **/__pycache__/*
