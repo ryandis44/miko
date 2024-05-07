@@ -1,3 +1,13 @@
+'''
+This file is responsible for handling tunables, which are variables that can be changed without needing to restart the bot.
+These tunables are stored in a database table, and are loaded into memory when the bot starts up. 
+'''
+
+
+
+
+
+
 from discord import Color
 from discord import ButtonStyle, SelectOption
 from discord import ChannelType
