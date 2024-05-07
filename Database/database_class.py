@@ -1,27 +1,29 @@
+'''
+Database file responsible for all database connections
+'''
 
-import os
-import time
 import asyncio
-import aiomysql
-import dns.resolver
-import mysql.connector as mariadb
+import aiomysql # used for asynchronous database connections
+import dns.resolver # used for resolving domain names to IP addresses
+import logging
+import mysql.connector as mariadb # used ONLY for first time tunables initialization
+import os # used for environment variables
+
 from dotenv import load_dotenv
 load_dotenv()
 
-# IP = None
+LOGGER = logging.getLogger(__name__)
 
-# def resolve_ip():
-#     print("RESOLVING IP******")
-#     global IP
-#     resolve = dns.resolver.query(os.getenv('REMOTE_DOMAIN'), 'A')
-#     for ipval in resolve:
-#         IP = ipval.to_text()
-#     print(IP)
 
-try:
-    IP = dns.resolver.resolve(os.getenv('REMOTE_DOMAIN'), 'A').rrset[0].to_text()
-except dns.resolver.NoAnswer:
+
+###########################################################################################################################
+
+
+
+try: IP = dns.resolver.resolve(os.getenv('REMOTE_DOMAIN'), 'A').rrset[0].to_text()
+except Exception as e:
     IP = 'No answer'
+    LOGGER.log(level=logging.CRITICAL, msg=f"Could not resolve domain name to IP address: {IP} | {e}") # TODO logs to stdout for some reason, look into
 
 pool = None
 async def connect_pool():
@@ -104,19 +106,13 @@ class AsyncDatabase:
 
 
 
+###########################################################################################################################
 
 
 
-
-
-
-
-
-
-
-
-
-
+'''
+Old synchronous database code. Used ONLY for first time tunables initialization
+'''
 
 db = None
 cur = None

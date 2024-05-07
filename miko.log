@@ -1,0 +1,3 @@
+2024-05-06 21:24:28,583:INFO:__main__:main.py:115: Logged in as Miko Testing#4681 912572126026924072
+2024-05-06 21:25:04,416:CRITICAL:__main__:main.py:63: Shutting down...
+2024-05-06 21:25:04,416:CRITICAL:__main__:main.py:65: Graceful shutdown complete. Goodbye.
