@@ -24,7 +24,7 @@ from tunables import tunables_init, tunables # tunables used by the bot
 Set up logger and load variables
 '''
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 handler = logging.FileHandler(filename='miko.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(lineno)s: %(message)s'))
@@ -81,16 +81,22 @@ Load all cogs from the cogs directories
 
 async def load_cogs():
     for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
-            await client.load_extension(f'cogs.{filename[:-3]}')
-            LOGGER.log(level=logging.DEBUG, msg=f'Loaded cog: {filename[:-3]}')
+        try:
+            if filename.endswith('.py'):
+                await client.load_extension(f'cogs.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cog: {filename[:-3]}')
+        except Exception as e:
+            LOGGER.error(f'Failed to load cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All cogs loaded.')
 
 async def load_cogs_console():
     for filename in os.listdir('./cogs_console'):
-        if filename.endswith('.py'):
-            console.load_extension(f'cogs.{filename[:-3]}')
-            LOGGER.log(level=logging.DEBUG, msg=f'Loaded console cog: {filename[:-3]}')
+        try:
+            if filename.endswith('.py'):
+                console.load_extension(f'cogs.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded console cog: {filename[:-3]}')
+        except Exception as e:
+            LOGGER.error(f'Failed to load console cog: {filename[:-3]} | {e}')
     LOGGER.log(level=logging.DEBUG, msg='All console cogs loaded.')
 
 

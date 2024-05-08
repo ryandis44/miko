@@ -5,7 +5,7 @@ from discord.utils import get
 import random
 import time
 from Database.GuildObjects import CachedMessage, MikoGuild, MikoMember, MikoTextChannel
-from Database.database_class import Database, AsyncDatabase
+from Database.MySQL import Database, AsyncDatabase
 from Database.RedisCache import RedisCache
 from Plex.background import end_of_day_int
 from Plex.embeds import plex_update_2_2

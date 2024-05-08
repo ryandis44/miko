@@ -8,8 +8,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 
 class Roll(commands.Cog):
-    def __init__(self, client: commands.Bot):
-        self.client = client
+    def __init__(self, client: commands.Bot): self.client = client
 
     # Generates a random number between 0 and 100 [inclusive]
     @commands.command(name='roll', aliases=['r'])

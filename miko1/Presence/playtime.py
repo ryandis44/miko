@@ -5,7 +5,7 @@ from discord.utils import get
 from Presence.GameActivity import GameActivity
 from Presence.Objects import ActivityUpdate
 from utils.HashTable import HashTable
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from misc.misc import time_elapsed, today
 from tunables import *
 

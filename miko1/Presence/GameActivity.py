@@ -67,7 +67,7 @@ the activity must "go through" in order to be resumed. Here is the logic:
 
 import time
 import asyncio
-from Database.database_class import AsyncDatabase, Database
+from Database.MySQL import AsyncDatabase, Database
 from Database.ApplicationObjects import Application
 from tunables import *
 

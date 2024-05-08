@@ -4,7 +4,7 @@ import redis.asyncio as redis
 from redis.commands.json.path import Path
 from redis.commands.search.query import Query
 from tunables import *
-from Database.database_class import IP, AsyncDatabase
+from Database.MySQL import IP, AsyncDatabase
 db = AsyncDatabase('Database.RedisCache.py')
 
 connection = None

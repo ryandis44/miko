@@ -2,7 +2,7 @@ import asyncio
 import uuid
 import discord
 from discord.ext import commands
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Presence.GameActivity import GameActivity
 from tunables import tunables
 from discord.ext.commands import Context

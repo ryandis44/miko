@@ -5,7 +5,7 @@ from Leveling.embeds import leveling_stats
 from tunables import *
 import os
 from Database.GuildObjects import MikoMember
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 
 
 class LevelCog(commands.Cog):

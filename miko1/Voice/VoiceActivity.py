@@ -19,7 +19,7 @@ just as it is when an activity is new and has not yet concluded for the first ti
 '''
 
 import discord
-from Database.database_class import AsyncDatabase, Database
+from Database.MySQL import AsyncDatabase, Database
 from tunables import *
 import time
 

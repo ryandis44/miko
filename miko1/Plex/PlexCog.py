@@ -5,7 +5,7 @@ from discord import app_commands
 from Database.GuildObjects import MikoMember
 from Plex.embeds import plex_upcoming, plex_multi_embed
 from tunables import *
-from Database.database_class import Database
+from Database.MySQL import Database
 import aiohttp
 import os
 from dotenv import load_dotenv

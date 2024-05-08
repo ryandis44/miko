@@ -1,3 +1,10 @@
-2024-05-06 21:24:28,583:INFO:__main__:main.py:115: Logged in as Miko Testing#4681 912572126026924072
-2024-05-06 21:25:04,416:CRITICAL:__main__:main.py:63: Shutting down...
-2024-05-06 21:25:04,416:CRITICAL:__main__:main.py:65: Graceful shutdown complete. Goodbye.
+2024-05-07 20:57:01,681:WARNING:discord.client:client.py:295: PyNaCl is not installed, voice will NOT be supported
+2024-05-07 20:57:01,686:INFO:discord.client:client.py:603: logging in using static token
+2024-05-07 20:57:02,394:INFO:discord.gateway:gateway.py:561: Shard ID None has connected to Gateway (Session ID: 435069ea389f92ec8c7d66bc241a90bd).
+2024-05-07 20:57:04,448:INFO:root:main.py:121: Logged in as Miko Testing#4681 912572126026924072
+2024-05-07 20:57:36,765:INFO:root:MySQL.py:34: Attempting asynchronous database connection via LAN...
+2024-05-07 20:57:36,766:INFO:root:MySQL.py:46: Connected to asynchronous database via LAN!
+2024-05-07 20:57:36,787:ERROR:root:MySQL.py:98: ASYNC DATABASE ERROR! [Database.MikiGuild.py] Could not execute: "INSERT INTO GUILDS (guild_id, name, owner_id, member_count) VALUES ('890638458211680256', 'The Boys Hangout', '221438665749037056', '193')"
+(1452, 'Cannot add or update a child row: a foreign key constraint fails (`miko2_testing`.`GUILDS`, CONSTRAINT `Link GUILDS.owner_id with USER.user_id` FOREIGN KEY (`owner_id`) REFERENCES `USERS` (`user_id`) ON UPDATE CASCADE)')
+2024-05-07 20:58:19,741:CRITICAL:root:main.py:63: Shutting down...
+2024-05-07 20:58:19,741:CRITICAL:root:main.py:65: Graceful shutdown complete. Goodbye.

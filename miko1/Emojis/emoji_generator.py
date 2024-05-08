@@ -1,5 +1,5 @@
 import discord
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from PIL import Image
 import requests, aiohttp
 from io import BytesIO

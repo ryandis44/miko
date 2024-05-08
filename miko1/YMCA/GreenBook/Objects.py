@@ -5,7 +5,7 @@ import discord
 from misc.misc import sanitize_name
 from tunables import tunables
 from Database.GuildObjects import MikoMember
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 db = AsyncDatabase("GreenBook.Objects.py")
 
 

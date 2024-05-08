@@ -3,7 +3,7 @@ import discord
 from discord.ui import View
 from Voice.track_voice import avg_voicetime_result, total_voicetime_result
 from tunables import *
-from Database.database_class import Database
+from Database.MySQL import Database
 from tunables import *
 from Voice.embeds import voicetime_embed, voicetime_search_embed
 

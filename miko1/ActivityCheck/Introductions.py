@@ -1,7 +1,7 @@
 import discord
 from misc.view_misc import LogChannel
 from tunables import *
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Database.GuildObjects import MikoMember
 db = AsyncDatabase("ActivityCheck.Introductions.py")
 

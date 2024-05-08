@@ -3,7 +3,7 @@ from misc.view_misc import LogChannel
 from tunables import *
 from YMCA.GreenBook.Objects import GreenBook, Person
 from Database.GuildObjects import MikoMember
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 db = AsyncDatabase("YMCA.Supplies.UI.py")
 
 

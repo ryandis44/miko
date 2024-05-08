@@ -1,7 +1,7 @@
 #from utils.playtime import playtime_interrupt
 from select import select
 import time
-from Database.database_class import Database
+from Database.MySQL import Database
 from Presence.Objects import PLAYTIME_SESSIONS
 from Voice.VoiceActivity import VOICE_SESSIONS
 

@@ -1,15 +1,15 @@
 '''
-This file is responsible for handling tunables, which are variables that can be changed without needing to restart the bot.
-These tunables are stored in a database table, and are loaded into memory when the bot starts up.
-The tunables can be refreshed at any time, and the bot will automatically update the values in memory.
-The tunables are used to configure the bot's behavior, and can be used to enable or disable certain features.
-The tunables are also used to store information about guild profiles, which are used to configure the bot's behavior on a per-guild basis.
-The tunables are stored in a dictionary, with the variable name as the key, and the value as the value.
+This file is responsible for handling tunables, which are variables that can be changed without needing to restart the bot
+These tunables are stored in a database table, and are loaded into memory when the bot starts up
+The tunables can be refreshed at any time, and the bot will automatically update the values in memory
+The tunables are used to configure the bot's behavior, and can be used to enable or disable certain features
+The tunables are also used to store information about guild profiles, which are used to configure the bot's behavior on a per-guild basis
+The tunables are stored in a dictionary, with the variable name as the key, and the value as the value
 '''
 
 
 
-from Database.database_class import Database, AsyncDatabase
+from Database.MySQL import Database, AsyncDatabase
 from discord import ButtonStyle, ChannelType, Color, SelectOption
 from json import loads
 db = AsyncDatabase("tunables.py")

@@ -1,6 +1,6 @@
 import time
 import discord
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Voice.VoiceActivity import VoiceActivity, VOICE_SESSIONS
 from tunables import *
 from misc.misc import locate_htable_obj

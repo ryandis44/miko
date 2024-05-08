@@ -4,7 +4,7 @@ from discord import app_commands
 from ActivityCheck.Introductions import IntroductionsView
 from Database.GuildObjects import MikoMember
 from tunables import *
-from Database.database_class import Database
+from Database.MySQL import Database
 import re
 import os
 from dotenv import load_dotenv

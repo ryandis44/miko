@@ -3,7 +3,7 @@ import discord
 from discord.ui import View
 import typing
 from Database.GuildObjects import MikoMember
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from tunables import *
 from misc.embeds import modified_playtime_embed
 from Presence.playtime import avg_playtime_result, playtime_embed, total_playtime_result

@@ -9,7 +9,7 @@ from Plex.embeds import plex_multi_embed
 from Presence.GameActivity import GameActivity
 from Voice.VoiceActivity import VoiceActivity, VOICE_SESSIONS
 from Database.GuildObjects import MikoMember, CHECK_LOCK
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Polls.UI import active_polls
 from Presence.Objects import PRESENCE_UPDATES, PLAYTIME_SESSIONS
 from AuditLog.AuditLogReader import DISCONNECT_ENTRIES

@@ -8,11 +8,12 @@ import dns.resolver # used for resolving domain names to IP addresses
 import logging
 import mysql.connector as mariadb # used ONLY for first time tunables initialization
 import os # used for environment variables
+import time # for sleep in synchronous database
 
 from dotenv import load_dotenv
 load_dotenv()
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger()
 
 
 
@@ -23,14 +24,14 @@ LOGGER = logging.getLogger(__name__)
 try: IP = dns.resolver.resolve(os.getenv('REMOTE_DOMAIN'), 'A').rrset[0].to_text()
 except Exception as e:
     IP = 'No answer'
-    LOGGER.log(level=logging.CRITICAL, msg=f"Could not resolve domain name to IP address: {IP} | {e}") # TODO logs to stdout for some reason, look into
+    LOGGER.critical(f"Could not resolve domain name to IP address: {IP} | {e}") # TODO logs to stdout for some reason, look into
 
 pool = None
 async def connect_pool():
     global pool
 
     try:
-        print("\n\nAttempting local database pool connection...")
+        LOGGER.info("Attempting asynchronous database connection via LAN...")
         if os.getenv('CONNECTION') == "REMOTE": raise Exception
         pool = await aiomysql.create_pool(
                 host='192.168.0.12',
@@ -42,9 +43,16 @@ async def connect_pool():
                 loop=asyncio.get_event_loop(),
                 autocommit=True
         )
-        print("Database pool connected locally!\n")
+        LOGGER.log(level=logging.INFO, msg="Connected to asynchronous database via LAN!")
+        
+        '''
+        TODO
+        Create tailscale connection here
+        '''
+        
+    
     except Exception as e:
-        print(f"Database server not running locally, attempting database pool connection via Cloudflare...")
+        LOGGER.log(level=logging.INFO, msg="Database server not running locally, attempting asynchronous database connection via Cloudflare...")
         try:
             pool = await aiomysql.create_pool(
                     host=IP,
@@ -55,16 +63,16 @@ async def connect_pool():
                     loop=asyncio.get_event_loop(),
                     autocommit=True
             )
-            print("Database pool connected via Cloudflare!\n")
+            LOGGER.log(level=logging.INFO, msg="Connected to asynchronous database via Cloudflare!\n")
         except:
-            print(f"\n##### FAILED TO CONNECT TO DATABASE! #####\n{e}\n")
+            LOGGER.log(level=logging.CRITICAL, msg=f"Failed to connect to asynchronous database: {e}")
 
 async def check_pool():
     global pool
     if pool is None:
         await connect_pool()
     if pool.closed:
-        print(f"\n\n####### DATABASE POOL CONNECTION LOST! Attempting to reconnect... #######")
+        LOGGER.log(level=logging.WARNING, msg="Asynchronous database connection lost. Attempting to reconnect...")
         await connect_pool()
 
         
@@ -87,8 +95,7 @@ class AsyncDatabase:
                     if os.getenv('DATABASE_DEBUG') != "1": await asyncio.sleep(5)
                     await check_pool()
                     continue
-                else:
-                    print(f"\nASYNC DATABASE ERROR! [{self.file}] Could not execute: \"{exec_cmd}\"\n{e}")
+                else: LOGGER.error(f"ASYNC DATABASE ERROR! [{self.file}] Could not execute: \"{exec_cmd}\"\n{e}")
             break
         
         if exec_cmd.startswith("SELECT"):

@@ -1,5 +1,5 @@
 import uuid
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from tunables import *
 db = AsyncDatabase('Database.ApplicationObjects.py')
 

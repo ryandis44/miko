@@ -3,7 +3,7 @@ import time
 import uuid
 
 import discord
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from misc.misc import remove_bolding, sanitize_name
 from tunables import tunables
 db = AsyncDatabase("YMCA.Checklist.Objects.py")

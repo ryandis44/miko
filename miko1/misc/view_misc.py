@@ -1,5 +1,5 @@
 import discord
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Database.GuildObjects import MikoMember
 from tunables import *
 db = AsyncDatabase("misc.log_channels.py")

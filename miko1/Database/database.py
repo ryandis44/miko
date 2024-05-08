@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from num2words import num2words
 from dotenv import load_dotenv
-from Database.database_class import AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from misc.misc import human_format, percentage_two_decimals
 from tunables import *
 
