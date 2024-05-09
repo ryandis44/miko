@@ -24,14 +24,20 @@ LOGGER = logging.getLogger()
 try: IP = dns.resolver.resolve(os.getenv('REMOTE_DOMAIN'), 'A').rrset[0].to_text()
 except Exception as e:
     IP = 'No answer'
-    LOGGER.critical(f"Could not resolve domain name to IP address: {IP} | {e}") # TODO logs to stdout for some reason, look into
+    LOGGER.critical(f"Could not resolve domain name to IP address: {IP} | {e}")
+
+try: VPN_IP = dns.resolver.resolve(os.getenv('VPN_DOMAIN'), 'A').rrset[0].to_text()
+except Exception as e:
+    VPN_IP = 'No answer'
+    LOGGER.critical(f"Could not resolve VPN domain name to VPN IP address: {IP} | {e}")
 
 pool = None
 async def connect_pool():
     global pool
 
+    # Local database connection
     try:
-        LOGGER.info("Attempting asynchronous database connection via LAN...")
+        LOGGER.debug("Attempting asynchronous database connection via LAN...")
         if os.getenv('CONNECTION') == "REMOTE": raise Exception
         pool = await aiomysql.create_pool(
                 host='192.168.0.12',
@@ -43,19 +49,14 @@ async def connect_pool():
                 loop=asyncio.get_event_loop(),
                 autocommit=True
         )
-        LOGGER.log(level=logging.INFO, msg="Connected to asynchronous database via LAN!")
-        
-        '''
-        TODO
-        Create tailscale connection here
-        '''
-        
+        LOGGER.info("Connected to asynchronous database via LAN!")
     
+    # VPN database connection
     except Exception as e:
-        LOGGER.log(level=logging.INFO, msg="Database server not running locally, attempting asynchronous database connection via Cloudflare...")
+        LOGGER.debug("Database server not running locally, attempting asynchronous database connection via VPN...")
         try:
             pool = await aiomysql.create_pool(
-                    host=IP,
+                    host=VPN_IP,
                     port=3306,
                     user=os.getenv('DATABASE_USERNAME'),
                     password=os.getenv('DATABASE_PASSWORD'),
@@ -63,16 +64,31 @@ async def connect_pool():
                     loop=asyncio.get_event_loop(),
                     autocommit=True
             )
-            LOGGER.log(level=logging.INFO, msg="Connected to asynchronous database via Cloudflare!\n")
-        except:
-            LOGGER.log(level=logging.CRITICAL, msg=f"Failed to connect to asynchronous database: {e}")
+            LOGGER.info("Connected to asynchronous database via VPN!")
+    
+        # Cloudflare database connection
+        except Exception as e:
+            LOGGER.debug("Database server not accessible via VPN, attempting asynchronous database connection via Cloudflare...")
+            try:
+                pool = await aiomysql.create_pool(
+                        host=IP,
+                        port=3306,
+                        user=os.getenv('DATABASE_USERNAME'),
+                        password=os.getenv('DATABASE_PASSWORD'),
+                        db=os.getenv('DATABASE'),
+                        loop=asyncio.get_event_loop(),
+                        autocommit=True
+                )
+                LOGGER.info("Connected to asynchronous database via Cloudflare!\n")
+            except:
+                LOGGER.critical(f"Failed to connect to asynchronous database: {e}")
 
 async def check_pool():
     global pool
     if pool is None:
         await connect_pool()
     if pool.closed:
-        LOGGER.log(level=logging.WARNING, msg="Asynchronous database connection lost. Attempting to reconnect...")
+        LOGGER.warning("Asynchronous database connection lost. Attempting to reconnect...")
         await connect_pool()
 
         
@@ -134,9 +150,11 @@ def dbclass_connect():
     # Prefer local database connection. Fallback to external Cloudflare
     # connection if local connection is not possible.
     load_dotenv() # Refresh values from .env file (if they changed)
+    
+    # Local database connection
     try:
-        if os.getenv('CONNECTION') == "REMOTE": raise mariadb.Error
-        print("\n\nAttempting local database connection...")
+        if os.getenv('CONNECTION') == "REMOTE": raise Exception
+        LOGGER.debug("[NON-ASYNC] Attempting database connection via LAN...")
         db = mariadb.connect(
             user=os.getenv('DATABASE_USERNAME'),
             password=os.getenv('DATABASE_PASSWORD'),
@@ -146,21 +164,37 @@ def dbclass_connect():
             database=os.getenv('DATABASE')
         )
         cur = db.cursor(buffered=True)
-        print("Connected to database locally!\n")
-    except mariadb.Error as e:
-        print(f"Database server not running locally, attempting database connection via Cloudflare...")
+        LOGGER.info("[NON-ASYNC] Connected to database via LAN!")
+    
+    # VPN database connection
+    except Exception as e:
+        LOGGER.debug("[NON-ASYNC] Database server not running locally, attempting database connection via VPN...")
         try:
             db = mariadb.connect(
                 user=os.getenv('DATABASE_USERNAME'),
                 password=os.getenv('DATABASE_PASSWORD'),
-                host=IP,
+                host=VPN_IP,
                 port=3306,
                 database=os.getenv('DATABASE')
             )
             cur = db.cursor(buffered=True)
-            print("Connected to database via Cloudflare!\n")
-        except mariadb.Error as e:
-            print(f"\n##### FAILED TO CONNECT TO DATABASE! #####\n{e}\n")
+            LOGGER.info("[NON-ASYNC] Connected to database via VPN!")
+        
+        # Cloudflare database connection
+        except Exception as e:
+            LOGGER.debug("[NON-ASYNC] Database server not accessible via VPN, attempting database connection via Cloudflare...")
+            try:
+                db = mariadb.connect(
+                    user=os.getenv('DATABASE_USERNAME'),
+                    password=os.getenv('DATABASE_PASSWORD'),
+                    host=IP,
+                    port=3306,
+                    database=os.getenv('DATABASE')
+                )
+                cur = db.cursor(buffered=True)
+                LOGGER.info("[NON-ASYNC] Connected to database via Cloudflare!\n")
+            except Exception as e:
+                LOGGER.critical(f"[NON-ASYNC] Failed to connect to database: {e}")
 
     db.autocommit = True
     return

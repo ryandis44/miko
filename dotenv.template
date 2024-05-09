@@ -9,3 +9,5 @@
 *APP_CMD_PREFIX=[MIKO TESTING]
 DATABASE_DEBUG=0 or 1 (none = 0 and 1 = debug)
 CONNECTION=REMOTE or LOCAL (not defined == local)
+REMOTE_DOMAIN=
+VPN_DOMAIN=
