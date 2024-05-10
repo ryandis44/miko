@@ -15,9 +15,9 @@ LOGGER = logging.getLogger()
 
 class MikoGuild:
     
-    def __init__(self, guild: discord.Guild, client: discord.Client) -> None:
-        self.guild: discord.Guild = guild
-        self.client: discord.Client = client
+    def __init__(self) -> None:
+        self.guild: discord.Guild = None
+        self.client: discord.Client = None
         
         self.profile_text: str = "ACTIVE"
         self.emoji_id: int = None
@@ -28,7 +28,9 @@ class MikoGuild:
         
         
         
-    async def ainit(self, check_exists: bool = True) -> None:
+    async def ainit(self, guild: discord.Guild, client: discord.Client, check_exists: bool = True) -> None:
+        self.guild = guild
+        self.client = client
         if check_exists: await self.__exists()
     
     

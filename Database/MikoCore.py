@@ -20,8 +20,8 @@ LOGGER = logging.getLogger()
 class MikoCore:
     
     def __init__(self) -> None:
-        self.user: MikoUser = None
-        self.guild: MikoGuild = None
+        self.user = MikoUser()
+        self.guild = MikoGuild()
         
         
         
@@ -29,18 +29,15 @@ class MikoCore:
     
     
     
+    # Initialize MikoUser and MikoGuild if the user is also a member of a guild (not a DM)
     async def user_ainit(self, user: discord.User|discord.Member, client: discord.Client) -> MikoUser:
-        self.user = MikoUser(user=user, client=client)
-        await self.user.ainit()
-        if self.user.is_member:
-            self.guild: MikoGuild = self.user.guild
-            print(self.guild)
+        await self.user.ainit(user=user, client=client)
+        if self.user.is_member: self.guild: MikoGuild = self.user.guild
     
     
     
     async def guild_ainit(self, guild: discord.Guild, client: discord.Client) -> MikoGuild:
-        self.guild = MikoGuild(guild=guild, client=client)
-        await self.guild.ainit()
+        await self.guild.ainit(guild=guild, client=client)
     
     
     
@@ -54,6 +51,20 @@ class MikoCore:
     # or for a specific guild. If no guild is detected, the default 'ACTIVE'
     # profile is used
     @property
-    def profile(self) -> PermissionProfile:
-        if isinstance(self.guild, MikoGuild): return self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
-        return self.tunables('PERMS_PROFILE_ACTIVE')
+    def profile(self) -> PermissionProfile: return self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
+
+    
+    
+    async def increment_statistic(self, key: str) -> None:
+        val = await db.execute(
+            f"SELECT count FROM USER_STATISTICS WHERE stat='{key}' AND user_id='{self.user.user.id}'"
+        )
+        if val == () or val is None:
+            await db.execute(
+                "INSERT INTO USER_STATISTICS (stat, count, user_id) VALUES "
+                f"('{key}', '{1}', '{self.user.user.id}')"
+            )
+        else:
+            await db.execute(
+                f"UPDATE USER_STATISTICS SET count=count+1 WHERE stat='{key}' AND user_id='{self.user.user.id}'"
+            )

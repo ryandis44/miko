@@ -15,11 +15,12 @@ LOGGER = logging.getLogger()
 
 
 
-class MikoUser(MikoGuild):
+class MikoUser:
     
-    def __init__(self, user: discord.User|discord.Member, client: discord.Client) -> None:
-        self.user = user
-        self.client = client
+    def __init__(self) -> None:
+        self.guild = MikoGuild()
+        self.user: discord.User|discord.Member = None
+        self.client: discord.Client = None
         
         self.bot_permission_level: int = 0
         self.last_interaction: int = 0
@@ -30,7 +31,9 @@ class MikoUser(MikoGuild):
         
         
         
-    async def ainit(self, check_exists: bool = True) -> None:
+    async def ainit(self, user: discord.User|discord.Member, client: discord.Client, check_exists: bool = True) -> None:
+        self.user = user
+        self.client = client
         if check_exists: await self.__exists() # Member MUST be initialized first, due to the foreign key constraint on GUILDS.owner_id
     
     
@@ -58,10 +61,7 @@ class MikoUser(MikoGuild):
             self.bot_permission_level = __rawuser[0][0]
             self.last_interaction = __rawuser[0][1]
 
-        if self.is_member:
-            print("MikoUser is a member")
-            super().__init__(guild=self.user.guild, client=self.client)
-            await super().ainit()
+        if self.is_member: await self.guild.ainit(guild=self.user.guild, client=self.client)
 
 
 

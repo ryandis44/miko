@@ -4,8 +4,7 @@ Debug testing file
 
 import random
 
-from Database.MikoGuild import MikoGuild
-from Database.MikoUser import MikoUser
+from Database.MikoCore import MikoCore
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -14,11 +13,15 @@ class Tester(commands.Cog):
 
     # Simple magic 8-ball command
     @commands.command(name='8ball', aliases=['8b'])
-    async def eightball(self, ctx: Context, *args):
+    async def magic_eightball(self, ctx: Context, *args):
         
-        u = MikoMember(user=ctx.author, client=self.client)
-        if (await u.profile).cmd_enabled('EIGHT_BALL') != 1: return
-        await u.increment_statistic('EIGHT_BALL')
+        mc = MikoCore()
+        await mc.user_ainit(user=ctx.author, client=self.client)
+        if mc.profile.cmd_enabled('EIGHT_BALL') == 0: return
+        elif mc.profile.cmd_enabled('EIGHT_BALL') == 2:
+            await ctx.send(mc.tunables('COMMAND_DISABLED_MESSAGE'), silent=True)
+            return
+        await mc.increment_statistic('EIGHT_BALL')
 
         user = ctx.message.author
         if len(args) == 0:

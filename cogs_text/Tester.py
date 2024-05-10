@@ -2,11 +2,9 @@
 Debug testing file
 '''
 
-import random
+
 
 from Database.MikoCore import MikoCore
-from Database.MikoGuild import MikoGuild
-from Database.MikoUser import MikoUser
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -14,7 +12,6 @@ class Tester(commands.Cog):
     def __init__(self, client: commands.Bot): self.client = client
 
     @commands.command(name='test', aliases=['t'])
-    @commands.guild_only()
     async def tester(self, ctx: Context):
         
         # u = MikoMember(user=ctx.author, client=self.client)
@@ -29,12 +26,13 @@ class Tester(commands.Cog):
         
         mc = MikoCore()
         await mc.user_ainit(user=ctx.author, client=self.client)
-        await mc.guild_ainit(guild=ctx.guild, client=self.client)
+        if mc.user.bot_permission_level <= 4: return
+        await mc.increment_statistic('TESTER_CMD')
         
         await ctx.send(
-            f"{mc} // {mc.user}\n"
-            f"{mc.profile}\n"
-            f"{mc.guild}"
+            f"{mc} // {mc.user} // Miko Permission level: {mc.user.bot_permission_level}\n"
+            f"{mc.guild} // {mc.profile}\n"
+            # f""
         )
 
 async def setup(client: commands.Bot):

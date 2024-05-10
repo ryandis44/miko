@@ -19,32 +19,34 @@ class Roll(commands.Cog):
         
         mc = MikoCore()
         await mc.user_ainit(user=ctx.author, client=self.client)
-        if mc.profile.cmd_enabled('ROLL') != 1:
-            await ctx.send(f"You do not have permission to use this command")
+        if mc.profile.cmd_enabled('ROLL') == 0: return
+        elif mc.profile.cmd_enabled('ROLL') == 2:
+            await ctx.send(mc.tunables('COMMAND_DISABLED_MESSAGE'), silent=True)
             return
+        await mc.increment_statistic('ROLL')
         
         user = ctx.message.author
         roll = random.randint(0, 100)
         if roll < 10:
             if roll == 1:
-                await ctx.send(f'{user.mention} rolled a **{roll}**! ...better than zero')
+                await ctx.send(f'{user.mention} rolled a **{roll}**! ...better than zero', silent=True)
             elif roll == 7:
-                await ctx.send(f'{user.mention} rolled a **{roll}**! Looks like lucky number seven isn\'t so lucky this time...')
+                await ctx.send(f'{user.mention} rolled a **{roll}**! Looks like lucky number seven isn\'t so lucky this time...', silent=True)
             else:
-                await ctx.send(f'{user.mention} rolled a **{roll}**! My my, quite unfortunate! <:okand:947697439048073276>')
+                await ctx.send(f'{user.mention} rolled a **{roll}**! My my, quite unfortunate! <:okand:947697439048073276>', silent=True)
         
         elif roll > 90:
             if roll == 100:
-                await ctx.send(f'{user.mention} rolled a **:100:**! GG. Might as well just give <@221438665749037056> the card.')
+                await ctx.send(f'{user.mention} rolled a **:100:**! GG. Might as well just give <@221438665749037056> the card.', silent=True)
             else:
-                await ctx.send(f'{user.mention} rolled a **{roll}**! Very impressive! <@357939301100683276> <:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368>')
+                await ctx.send(f'{user.mention} rolled a **{roll}**! Very impressive! <@357939301100683276> <:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368><:hector_talking:947690384841146368>', silent=True)
         
         elif roll == 50:
-            await ctx.send(f'{user.mention} rolled a **{roll}**! It could go either way at this point!')
+            await ctx.send(f'{user.mention} rolled a **{roll}**! It could go either way at this point!', silent=True)
         elif roll == 69:
-            await ctx.send(f'{user.mention} rolled a **{roll}**! :smirk:')
+            await ctx.send(f'{user.mention} rolled a **{roll}**! :smirk:', silent=True)
         else:
-            await ctx.send(f'{user.mention} rolled a **{roll}**!')
+            await ctx.send(f'{user.mention} rolled a **{roll}**!', silent=True)
 
 async def setup(client: commands.Bot):
     await client.add_cog(Roll(client))
