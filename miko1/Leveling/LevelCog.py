@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from Leveling.embeds import leveling_stats
-from tunables import *
+from Database.tunables import *
 import os
 from Database.GuildObjects import MikoMember
 from Database.MySQL import AsyncDatabase

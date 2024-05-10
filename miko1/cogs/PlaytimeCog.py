@@ -11,7 +11,7 @@ from Voice.embeds import voicetime_search_embed
 from Voice.track_voice import avg_voicetime_result, total_voicetime_result
 from misc.embeds import modified_playtime_embed
 from Presence.playtime import avg_playtime_result, get_app_from_str, playtime_embed, total_playtime_result
-from tunables import *
+from Database.tunables import *
 from Database.MySQL import Database, AsyncDatabase
 import re
 import os

@@ -4,7 +4,7 @@ from Settings.ChannelSettings import all_channel_settings
 from Settings.GuildSettings import all_guild_settings
 from Settings.UserSettings import all_user_settings
 from Settings.settings import Setting, MikoMember
-from tunables import *
+from Database.tunables import *
 
 
 # Main settings class responsible for entire settings menu interaction

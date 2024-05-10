@@ -1,6 +1,6 @@
 import os
 import discord
-from tunables import *
+from Database.tunables import *
 from discord.ext import commands
 from discord import app_commands
 from YMCA.Checklist.UI import ChecklistView

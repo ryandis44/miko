@@ -69,7 +69,7 @@ import time
 import asyncio
 from Database.MySQL import AsyncDatabase, Database
 from Database.ApplicationObjects import Application
-from tunables import *
+from Database.tunables import *
 
 
 # ga = Database("GameActivity.py")

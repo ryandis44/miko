@@ -4,7 +4,7 @@ from Emojis.emoji_generator import get_guild_emoji
 from Voice.VoiceActivity import VoiceActivity, VOICE_SESSIONS
 from Voice.track_voice import get_recent_voice_activity, get_voicetime_today, last_voiced_server
 from misc.misc import locate_htable_obj, time_elapsed, today
-from tunables import *
+from Database.tunables import *
 
 
 # Generic voicetime embed when complicated queries are not supplied

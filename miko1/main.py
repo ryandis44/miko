@@ -1,7 +1,7 @@
 # Miko Bot main file
 from AuditLog.AuditLogReader import auditEntry, handle_disconnect
 from Database.MySQL import connect_pool
-from tunables import tunables_init, tunables, GLOBAL_EMBED_COLOR, tunables_refresh
+from Database.tunables import tunables_init, tunables, GLOBAL_EMBED_COLOR, tunables_refresh
 tunables_init()
 
 import tracemalloc

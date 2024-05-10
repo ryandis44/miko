@@ -20,7 +20,7 @@ from YMCA.Checklist.Objects import Checklist
 from misc.embeds import help_embed
 from misc.holiday_roles import get_holiday
 from misc.misc import emojis_1to10, generate_nickname, react_all_emoji_list, today
-from tunables import *
+from Database.tunables import *
 ago = AsyncDatabase("Database.GuildObjects.py")
 r = RedisCache('Database.GuildObjects.py')
 

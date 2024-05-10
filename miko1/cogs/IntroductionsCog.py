@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from ActivityCheck.Introductions import IntroductionsView
 from Database.GuildObjects import MikoMember
-from tunables import *
+from Database.tunables import *
 from Database.MySQL import Database
 import re
 import os

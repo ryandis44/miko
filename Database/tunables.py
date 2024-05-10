@@ -9,10 +9,13 @@ The tunables are stored in a dictionary, with the variable name as the key, and 
 
 
 
+import logging
+
 from Database.MySQL import Database, AsyncDatabase
 from discord import ButtonStyle, ChannelType, Color, SelectOption
 from json import loads
-db = AsyncDatabase("tunables.py")
+db = AsyncDatabase(__file__)
+LOGGER = logging.getLogger()
 
 GENERIC_CONFIRM_STYLE=ButtonStyle.green
 GENERIC_DECLINE_STYLE=ButtonStyle.red
@@ -29,7 +32,7 @@ TUNABLES = {}
 def tunables(s):
     try: return TUNABLES[s]
     except Exception as e:
-        print(f"TUNABLES ERROR: Could not find '{s}' | {e}")
+        LOGGER.error(f"TUNABLES ERROR: Could not find '{s}' | {e}")
         return None
 
 def all_tunable_keys() -> list: return [*TUNABLES]
@@ -58,7 +61,7 @@ def assign_tunables(val):
             elif tunable[1] not in ["TRUE", "FALSE"]:
                 if tunable[1] is not None and tunable[1].isdigit(): TUNABLES[tunable[0]] = int(tunable[1])
                 else: TUNABLES[tunable[0]] = tunable[1]
-        except Exception as e: print(f"TUNABLES ERROR: (({e})) Could not ASSIGN: {tunable}")
+        except Exception as e: LOGGER.error(f"TUNABLES ERROR: (({e})) Could not ASSIGN: {tunable}")
     configure_tunables()
 
 def configure_tunables() -> None:
@@ -67,18 +70,18 @@ def configure_tunables() -> None:
     temp = []
     for key, val in TUNABLES.items():
         try:
-            if 'GUILD_PROFILE_' in key:
-                TUNABLES[key] = GuildProfile(profile=str(key)[14:])
+            if 'PERMS_PROFILE_' in key:
+                TUNABLES[key] = PermissionProfile(profile=str(key)[14:])
             
             if 'OPENAI_PERSONALITY_' in key:
                 d = loads(val)
                 temp.append(d)
-        except Exception as e: print(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PROFILE {key} {val}")
+        except Exception as e: LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PROFILE {key} {val}")
     
     def srt(d) -> int:
         return d['position']
     try: temp.sort(key=srt)
-    except Exception as e: print(f"TUNABLES ERROR: Could not SORT AI PERSONALITIES: {e}")
+    except Exception as e: LOGGER.error(f"TUNABLES ERROR: Could not SORT AI PERSONALITIES: {e}")
     for d in temp:
         try:
             TUNABLES['OPENAI_PERSONALITIES'].append(
@@ -104,16 +107,16 @@ def configure_tunables() -> None:
                 TUNABLES['OPENAI_PERSONALITIES'].pop()
                 del TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"]
             except: pass
-            print(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
+            LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
 
 
 
 
 
-class GuildProfile():
+class PermissionProfile():
 
     def __init__(self, profile: str):
-        self.params = str(tunables(f'GUILD_PROFILE_{profile}')).split(',')
+        self.params = str(tunables(f'PERMS_PROFILE_{profile}')).split(',')
         self.profile = profile
         self.v = {}
         
@@ -122,7 +125,7 @@ class GuildProfile():
         self.__handle_params()
 
     def __str__(self):
-        return self.params
+        return f"{self.profile} | {self.params}"
     
     def __handle_params(self) -> None:
         for option in self.params:

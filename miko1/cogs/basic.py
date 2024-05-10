@@ -16,7 +16,7 @@ from misc.misc import time_elapsed, translate_mention
 import os
 from dotenv import load_dotenv
 from discord.ext.commands import Context
-from tunables import *
+from Database.tunables import *
 
 b = Database("basic.py")
 ab = AsyncDatabase("cogs.basic.py")

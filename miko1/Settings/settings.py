@@ -1,6 +1,6 @@
 import discord
 from Database.GuildObjects import MikoMember, GuildProfile
-from tunables import *
+from Database.tunables import *
 db = AsyncDatabase("Settings.settings.py")
 
 class Setting:

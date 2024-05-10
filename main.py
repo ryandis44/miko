@@ -12,7 +12,7 @@ import signal # used for handling shutdown signals (ctrl+c)
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
-from tunables import tunables_init, tunables # tunables used by the bot
+from Database.tunables import tunables_init, tunables # tunables used by the bot
 
 
 
@@ -24,8 +24,9 @@ from tunables import tunables_init, tunables # tunables used by the bot
 Set up logger and load variables
 '''
 
+log_level = os.getenv('LOG_LEVEL')
 LOGGER = logging.getLogger()
-LOGGER.setLevel(logging.INFO)
+LOGGER.setLevel(logging.WARNING if log_level is None else int(log_level)) # default log level is WARNING
 handler = logging.FileHandler(filename='miko.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(lineno)s: %(message)s'))
 LOGGER.addHandler(handler)
@@ -67,7 +68,7 @@ def thread_kill(one=None, two=None):
 signal.signal(signal.SIGINT, thread_kill)
 
 @console.command()
-async def shutdown(): thread_kill()
+async def shutdown(): thread_kill() # pterodactyl panel shutdown command
 
 
 
@@ -80,10 +81,10 @@ Load all cogs from the cogs directories
 '''
 
 async def load_cogs():
-    for filename in os.listdir('./cogs'):
+    for filename in os.listdir('./cogs_text'):
         try:
             if filename.endswith('.py'):
-                await client.load_extension(f'cogs.{filename[:-3]}')
+                await client.load_extension(f'cogs_text.{filename[:-3]}')
                 LOGGER.log(level=logging.DEBUG, msg=f'Loaded cog: {filename[:-3]}')
         except Exception as e:
             LOGGER.error(f'Failed to load cog: {filename[:-3]} | {e}')   
@@ -93,7 +94,7 @@ async def load_cogs_console():
     for filename in os.listdir('./cogs_console'):
         try:
             if filename.endswith('.py'):
-                console.load_extension(f'cogs.{filename[:-3]}')
+                console.load_extension(f'cogs_console.{filename[:-3]}')
                 LOGGER.log(level=logging.DEBUG, msg=f'Loaded console cog: {filename[:-3]}')
         except Exception as e:
             LOGGER.error(f'Failed to load console cog: {filename[:-3]} | {e}')
@@ -112,7 +113,7 @@ Start the bot
 async def main() -> None:
     async with client:
         await load_cogs()
-        # console.start()
+        console.start()
         # await load_cogs_console()
         await client.start(os.getenv('DISCORD_TOKEN'))
 

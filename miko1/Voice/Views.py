@@ -2,9 +2,9 @@ import time
 import discord
 from discord.ui import View
 from Voice.track_voice import avg_voicetime_result, total_voicetime_result
-from tunables import *
+from Database.tunables import *
 from Database.MySQL import Database
-from tunables import *
+from Database.tunables import *
 from Voice.embeds import voicetime_embed, voicetime_search_embed
 
 ptv = Database("Presence.Views.py")

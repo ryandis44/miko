@@ -120,7 +120,7 @@ class AsyncDatabase:
             if len(val) == 1:
                 if len(val[0]) == 1:
                     return val[0][0]
-            return val if val != () else [] # easier migration from old synchronous code
+            return val if val != () else () # easier migration from old synchronous code
         await cursor.close()
         return
     

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from Database.GuildObjects import MikoMember
 from misc.embeds import help_embed
-from tunables import *
+from Database.tunables import *
 from Database.MySQL import Database
 import re
 import os

@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from Database.GuildObjects import MikoTextChannel
 from Settings.Views import SettingsView
-from tunables import *
+from Database.tunables import *
 from Database.MySQL import Database
 import os
 from dotenv import load_dotenv

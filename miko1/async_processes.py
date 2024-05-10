@@ -14,7 +14,7 @@ from Polls.UI import active_polls
 from Presence.Objects import PRESENCE_UPDATES, PLAYTIME_SESSIONS
 from AuditLog.AuditLogReader import DISCONNECT_ENTRIES
 
-from tunables import tunables
+from Database.tunables import tunables
 db = AsyncDatabase("async_processes.py")
 
 client: discord.Client = None

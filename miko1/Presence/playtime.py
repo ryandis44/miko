@@ -7,7 +7,7 @@ from Presence.Objects import ActivityUpdate
 from utils.HashTable import HashTable
 from Database.MySQL import AsyncDatabase
 from misc.misc import time_elapsed, today
-from tunables import *
+from Database.tunables import *
 
 
 # For every active session, end session when bot terminates

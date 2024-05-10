@@ -1,7 +1,7 @@
 import discord
 from YMCA.Checklist.Objects import Checklist, ChecklistItem, create_checklist
 from misc.view_misc import LogChannel
-from tunables import *
+from Database.tunables import *
 from Database.GuildObjects import MikoMember
 
 

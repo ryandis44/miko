@@ -1,7 +1,7 @@
 from Database.ApplicationObjects import Application
 from Presence.GameActivity import GameActivity
 from misc.misc import time_elapsed, today
-from tunables import tunables
+from Database.tunables import tunables
 from Database.MySQL import AsyncDatabase
 db = AsyncDatabase("Database.UserAttributes.py")
 

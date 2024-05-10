@@ -1,6 +1,6 @@
 import discord
 from misc.view_misc import LogChannel, ModalTryAgain, check_modal_error
-from tunables import *
+from Database.tunables import *
 from YMCA.GreenBook.Objects import GreenBook, Person
 from Database.GuildObjects import MikoMember
 from Database.MySQL import AsyncDatabase

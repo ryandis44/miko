@@ -12,7 +12,7 @@ from Music.UI import SongSelectView, PlaylistButtons, show_playlist_result, song
 from Music.PersistentPlayer import PersistentPlayer
 from Music.LavalinkClient import AUDIO_SESSIONS
 from lavalink import NodeConnectedEvent, NodeDisconnectedEvent
-from tunables import *
+from Database.tunables import *
 load_dotenv()
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')

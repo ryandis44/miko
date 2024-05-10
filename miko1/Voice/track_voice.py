@@ -4,7 +4,7 @@ from Presence.playtime import today
 from Voice.VoiceActivity import VoiceActivity, VOICE_SESSIONS
 from misc.misc import determine_htable_key, locate_htable_obj, time_elapsed
 from Database.GuildObjects import MikoMember
-from tunables import *
+from Database.tunables import *
 db = AsyncDatabase("Voice.track_voice.py")
 
 async def fetch_voicetime_sessions(client: discord.Client):

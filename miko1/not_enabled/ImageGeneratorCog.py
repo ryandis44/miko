@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from Database.GuildObjects import MikoMember
 from OpenAI.ai import MikoGPT
-from tunables import *
+from Database.tunables import *
 import os
 from dotenv import load_dotenv
 load_dotenv()

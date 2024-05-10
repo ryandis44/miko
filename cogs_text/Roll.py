@@ -1,9 +1,12 @@
 '''
+Legacy Text Command
+
 File for 'mroll, mr' command
 '''
 
 import random
 
+from Database.MikoCore import MikoCore
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -12,12 +15,13 @@ class Roll(commands.Cog):
 
     # Generates a random number between 0 and 100 [inclusive]
     @commands.command(name='roll', aliases=['r'])
-    @commands.guild_only()
     async def roll(self, ctx: Context):
         
-        # u = MikoMember(user=ctx.author, client=self.client)
-        # if (await u.profile).cmd_enabled('ROLL') != 1: return
-        # await u.increment_statistic('ROLL')
+        mc = MikoCore()
+        await mc.user_ainit(user=ctx.author, client=self.client)
+        if mc.profile.cmd_enabled('ROLL') != 1:
+            await ctx.send(f"You do not have permission to use this command")
+            return
         
         user = ctx.message.author
         roll = random.randint(0, 100)

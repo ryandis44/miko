@@ -1,6 +1,6 @@
 import discord
 from Database.GuildObjects import MikoMember
-from tunables import *
+from Database.tunables import *
 from misc.misc import time_elapsed
 
 async def leveling_stats(u: MikoMember) -> discord.Embed:

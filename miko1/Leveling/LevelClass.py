@@ -2,7 +2,7 @@ import time
 import discord
 from Database.MySQL import AsyncDatabase
 from Voice.VoiceActivity import VoiceActivity, VOICE_SESSIONS
-from tunables import *
+from Database.tunables import *
 from misc.misc import locate_htable_obj
 # lc = Database("LevelClass.py")
 alc = AsyncDatabase("LevelClass.py")

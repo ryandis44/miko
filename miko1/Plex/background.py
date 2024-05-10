@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 import aiohttp
 import discord
-from tunables import *
+from Database.tunables import *
 
 def this_week() -> str:
 

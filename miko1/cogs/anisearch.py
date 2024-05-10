@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.ui import View
 from utils.dropdown import Select
 from utils.fetch_anime_data import fetch_anime_results
-from tunables import *
+from Database.tunables import *
 from Database.GuildObjects import MikoMember
 
 class AniSearch(commands.Cog):

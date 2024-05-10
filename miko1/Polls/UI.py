@@ -3,7 +3,7 @@ import time
 import discord
 from discord.ui import View
 from misc.misc import emojis_1to10
-from tunables import *
+from Database.tunables import *
 from utils.HashTable import HashTable
 from Database.GuildObjects import MikoMember
 

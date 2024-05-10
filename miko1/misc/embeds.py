@@ -4,7 +4,7 @@ import discord
 from misc.misc import sanitize_track_name, time_elapsed
 
 from Presence.playtime import last_played
-from tunables import *
+from Database.tunables import *
 
 def plex_requests_embed():
 

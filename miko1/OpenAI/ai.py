@@ -5,7 +5,7 @@ from openai import OpenAI
 import tiktoken
 import discord
 import re
-from tunables import *
+from Database.tunables import *
 from Database.GuildObjects import CachedMessage, MikoMember, GuildProfile, AsyncDatabase, RedisCache, MikoTextChannel, MikoMessage
 
 db = AsyncDatabase('OpenAI.ai.py')

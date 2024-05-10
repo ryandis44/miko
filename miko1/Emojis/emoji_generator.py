@@ -5,7 +5,7 @@ import requests, aiohttp
 from io import BytesIO
 from discord.utils import get
 import os
-from tunables import *
+from Database.tunables import *
 from dotenv import load_dotenv
 
 load_dotenv()

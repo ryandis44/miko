@@ -20,7 +20,7 @@ just as it is when an activity is new and has not yet concluded for the first ti
 
 import discord
 from Database.MySQL import AsyncDatabase, Database
-from tunables import *
+from Database.tunables import *
 import time
 
 VOICE_SESSIONS = {}
