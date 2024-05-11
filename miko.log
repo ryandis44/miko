@@ -1,7 +1,0 @@
-2024-05-11 15:04:18,553:WARNING:discord.client:client.py:295: PyNaCl is not installed, voice will NOT be supported
-2024-05-11 15:04:18,563:INFO:dpyConsole:console.py:102: Console is ready and is listening for commands
-
-2024-05-11 15:04:18,563:INFO:discord.client:client.py:603: logging in using static token
-2024-05-11 15:04:19,124:INFO:discord.gateway:gateway.py:561: Shard ID None has connected to Gateway (Session ID: a225a190ff8d9240757384314ad5ca5d).
-2024-05-11 15:04:21,163:INFO:root:main.py:122: Logged in as Miko Testing#4681 912572126026924072
-2024-05-11 15:04:29,104:INFO:root:MySQL.py:72: Connected to asynchronous database via VPN!
