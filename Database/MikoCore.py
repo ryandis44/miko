@@ -51,20 +51,9 @@ class MikoCore:
     # or for a specific guild. If no guild is detected, the default 'ACTIVE'
     # profile is used
     @property
-    def profile(self) -> PermissionProfile: return self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
-
-    
-    
-    async def increment_statistic(self, key: str) -> None:
-        val = await db.execute(
-            f"SELECT count FROM USER_STATISTICS WHERE stat='{key}' AND user_id='{self.user.user.id}'"
-        )
-        if val == () or val is None:
-            await db.execute(
-                "INSERT INTO USER_STATISTICS (stat, count, user_id) VALUES "
-                f"('{key}', '{1}', '{self.user.user.id}')"
-            )
+    def profile(self) -> PermissionProfile:
+        __profile = self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
+        if __profile is not None: return __profile
         else:
-            await db.execute(
-                f"UPDATE USER_STATISTICS SET count=count+1 WHERE stat='{key}' AND user_id='{self.user.user.id}'"
-            )
+            LOGGER.warning(f"Guild profile '{self.guild.profile_text}' for guild {self.guild.guild.name} ({self.guild.guild.id}) not found. Using default 'ACTIVE' profile")
+            return self.tunables('PERMS_PROFILE_ACTIVE')

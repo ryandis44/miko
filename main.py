@@ -12,6 +12,7 @@ import signal # used for handling shutdown signals (ctrl+c)
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
+from Database.MySQL import connect_pool # connect to the database
 from Database.tunables import tunables_init, tunables # tunables used by the bot
 
 
@@ -80,15 +81,25 @@ async def shutdown(): thread_kill() # pterodactyl panel shutdown command
 Load all cogs from the cogs directories
 '''
 
-async def load_cogs():
+async def load_cogs_text():
     for filename in os.listdir('./cogs_text'):
         try:
             if filename.endswith('.py'):
                 await client.load_extension(f'cogs_text.{filename[:-3]}')
-                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cog: {filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded text cog: {filename[:-3]}')
         except Exception as e:
-            LOGGER.error(f'Failed to load cog: {filename[:-3]} | {e}')   
-    LOGGER.log(level=logging.DEBUG, msg='All cogs loaded.')
+            LOGGER.error(f'Failed to load text cog: {filename[:-3]} | {e}')   
+    LOGGER.log(level=logging.DEBUG, msg='All text cogs loaded.')
+
+async def load_cogs_cmd():
+    for filename in os.listdir('./cogs_cmd'):
+        try:
+            if filename.endswith('.py'):
+                await client.load_extension(f'cogs_cmd.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog: {filename[:-3]}')
+        except Exception as e:
+            LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
+    LOGGER.log(level=logging.DEBUG, msg='All cmd cogs loaded.')
 
 async def load_cogs_console():
     for filename in os.listdir('./cogs_console'):
@@ -112,8 +123,10 @@ Start the bot
 
 async def main() -> None:
     async with client:
-        await load_cogs()
+        await load_cogs_text()
+        # await load_cogs_cmd()
         console.start()
+        await connect_pool()
         # await load_cogs_console()
         await client.start(os.getenv('DISCORD_TOKEN'))
 
@@ -121,5 +134,6 @@ async def main() -> None:
 async def on_ready() -> None:
     LOGGER.log(level=logging.INFO, msg=f'Logged in as {client.user} {client.user.id}')
     print('bot online') # for pterodactyl console for online status
+    await client.change_presence(activity=discord.Game(name=tunables("ACTIVITY_STATUS")))
 
 asyncio.run(main())

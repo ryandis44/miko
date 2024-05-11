@@ -1,6 +1,12 @@
-import random
+'''
+Just contains misc functions that are used throughout the bot
+'''
+
+
+
 import discord
-import itertools
+import random
+
 from datetime import date, datetime
 
 def sanitize_name(name) -> str|None:

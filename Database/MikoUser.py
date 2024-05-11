@@ -71,3 +71,19 @@ class MikoUser:
 
     @property
     def is_member(self) -> bool: return isinstance(self.user, discord.Member)
+
+
+
+    async def increment_statistic(self, key: str) -> None:
+        val = await db.execute(
+            f"SELECT count FROM USER_STATISTICS WHERE stat='{key}' AND user_id='{self.user.id}'"
+        )
+        if val == () or val is None:
+            await db.execute(
+                "INSERT INTO USER_STATISTICS (stat, count, user_id) VALUES "
+                f"('{key}', '{1}', '{self.user.id}')"
+            )
+        else:
+            await db.execute(
+                f"UPDATE USER_STATISTICS SET count=count+1 WHERE stat='{key}' AND user_id='{self.user.id}'"
+            )

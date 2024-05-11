@@ -15,4 +15,4 @@ __pycache__
 .env_miko
 ffmpeg/
 .VSCodeCounter
-miko.log
+*.log

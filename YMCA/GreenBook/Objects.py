@@ -1,11 +1,18 @@
-import time
-import uuid
+'''
+File containing green book backend
+
+*Part of YMCA Internship
+'''
+
+
 
 import discord
-from misc.misc import sanitize_name
-from Database.tunables import tunables
-from Database.GuildObjects import MikoMember
+import time
+import uuid # for generating unique entry IDs
+
+from Database.MikoCore import MikoCore
 from Database.MySQL import AsyncDatabase
+from misc.misc import sanitize_name # for sanitizing user input
 db = AsyncDatabase("GreenBook.Objects.py")
 
 
@@ -211,14 +218,14 @@ class Person:
             case 'R': self.wristband = "RED"
 
 class GreenBook:
-    def __init__(self, u: MikoMember):
-        self.u = u
+    def __init__(self, mc: MikoCore):
+        self.mc = mc # pre-initialized MikoCore object
 
     @property
     async def total_entries(self) -> int:
         val = await db.execute(
             "SELECT COUNT(*) FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-            f"server_id='{self.u.guild.id}'"
+            f"server_id='{self.mc.guild.guild.id}'"
         )
         if val == [] or val is None: return 0
         return int(val)
@@ -226,8 +233,8 @@ class GreenBook:
     async def recent_entries(self, offset: int=0, order: str="pass_time DESC") -> list[Person]:
         val = await db.execute(
             "SELECT user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-            f"server_id='{self.u.guild.id}' "
-            f"ORDER BY {order} LIMIT {tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')} OFFSET {offset}"
+            f"server_id='{self.mc.guild.guild.id}' "
+            f"ORDER BY {order} LIMIT {self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')} OFFSET {offset}"
         )
         if val == [] or val is None: return []
         plist = []
@@ -342,7 +349,7 @@ class GreenBook:
         )
 
         rp = Person(
-            creator_id=self.u.user.id,
+            creator_id=self.mc.user.user.id,
             eid=eid,
             first=first.upper(),
             last=last.upper(),

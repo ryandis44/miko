@@ -53,4 +53,13 @@ class MikoGuild:
     
     
     
-    def is_guild(self) -> bool: return True
+###########################################################################################################################
+    
+    
+    
+    @property
+    async def ymca_green_book_announce_channel(self) -> discord.TextChannel:
+        __channel_id = await db.execute(
+            f"SELECT ymca_green_book_announce_channel FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
+        )
+        return self.guild.get_channel(int(__channel_id)) if __channel_id is not None or __channel_id == () else None
