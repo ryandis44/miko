@@ -21,6 +21,7 @@ class MikoGuild:
         
         self.profile_text: str = "ACTIVE"
         self.emoji_id: int = None
+        self.ymca_green_book_announce_channel: discord.TextChannel|None = None
         
         
         
@@ -31,7 +32,12 @@ class MikoGuild:
     async def ainit(self, guild: discord.Guild, client: discord.Client, check_exists: bool = True) -> None:
         self.guild = guild
         self.client = client
-        if check_exists: await self.__exists()
+        if check_exists: await self.__exists() # come back to this
+    
+    
+    
+    async def reinit(self) -> None:
+        await self.ainit(guild=self.guild, client=self.client)
     
     
     
@@ -47,7 +53,7 @@ class MikoGuild:
             )
             LOGGER.info(f"Added guild {self.guild.name} ({self.guild.id}) to database.")
             
-        else:
+        else: # TODO cant be here
             self.profile_text = __rawguild[0][0]
             self.emoji_id = __rawguild[0][1]
     
@@ -56,10 +62,3 @@ class MikoGuild:
 ###########################################################################################################################
     
     
-    
-    @property
-    async def ymca_green_book_announce_channel(self) -> discord.TextChannel:
-        __channel_id = await db.execute(
-            f"SELECT ymca_green_book_announce_channel FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
-        )
-        return self.guild.get_channel(int(__channel_id)) if __channel_id is not None or __channel_id == () else None

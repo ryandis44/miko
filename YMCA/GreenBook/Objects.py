@@ -361,7 +361,7 @@ class GreenBook:
         )
 
         try:
-            ch = await self.u.ymca_green_book_channel
+            ch = await self.mc.guild.ymca_green_book_announce_channel
             if ch is not None:
                 await ch.send(
                     content=(
