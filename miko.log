@@ -1,10 +1,7 @@
-2024-05-10 12:21:50,977:WARNING:discord.client:client.py:295: PyNaCl is not installed, voice will NOT be supported
-2024-05-10 12:21:50,995:ERROR:root:main.py:90: Failed to load cog: Tester | Extension 'cogs_text.Tester' raised an error: ClientException: Cog named 'Tester' already loaded
-2024-05-10 12:21:50,995:INFO:dpyConsole:console.py:102: Console is ready and is listening for commands
+2024-05-11 15:04:18,553:WARNING:discord.client:client.py:295: PyNaCl is not installed, voice will NOT be supported
+2024-05-11 15:04:18,563:INFO:dpyConsole:console.py:102: Console is ready and is listening for commands
 
-2024-05-10 12:21:50,996:INFO:discord.client:client.py:603: logging in using static token
-2024-05-10 12:21:51,696:INFO:discord.gateway:gateway.py:561: Shard ID None has connected to Gateway (Session ID: b97a103b70111a1263ed33e477c28428).
-2024-05-10 12:21:53,751:INFO:root:main.py:122: Logged in as Miko Testing#4681 912572126026924072
-2024-05-10 12:21:57,110:INFO:root:MySQL.py:52: Connected to asynchronous database via LAN!
-2024-05-10 12:28:47,044:CRITICAL:root:main.py:64: Shutting down...
-2024-05-10 12:28:47,044:CRITICAL:root:main.py:66: Graceful shutdown complete. Goodbye.
+2024-05-11 15:04:18,563:INFO:discord.client:client.py:603: logging in using static token
+2024-05-11 15:04:19,124:INFO:discord.gateway:gateway.py:561: Shard ID None has connected to Gateway (Session ID: a225a190ff8d9240757384314ad5ca5d).
+2024-05-11 15:04:21,163:INFO:root:main.py:122: Logged in as Miko Testing#4681 912572126026924072
+2024-05-11 15:04:29,104:INFO:root:MySQL.py:72: Connected to asynchronous database via VPN!
