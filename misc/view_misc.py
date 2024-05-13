@@ -1,13 +1,23 @@
+'''
+File for miscellaneous functions and objects
+for views
+'''
+
+
+
 import discord
+import logging
+
+from Database.MikoCore import MikoCore
 from Database.MySQL import AsyncDatabase
-from Database.GuildObjects import MikoMember
-from Database.tunables import *
 db = AsyncDatabase("misc.log_channels.py")
+LOGGER = logging.getLogger()
 
 
 class ModalTryAgain(discord.ui.View):
     def __init__(self, calling_modal, error_interaction: discord.Interaction):
-        super().__init__(timeout=tunables('YMCA_VIEW_TIMEOUT'))
+        self.mc = MikoCore()
+        super().__init__(timeout=self.mc.tunables('YMCA_VIEW_TIMEOUT'))
         self.calling_modal = calling_modal
         self.error_interaction = error_interaction
 
@@ -60,10 +70,10 @@ def check_modal_error(modal) -> dict:
     return e
 
 class LogChannel(discord.ui.View):
-    def __init__(self, original_interaction: discord.Interaction, typ: str, return_view):
-        super().__init__(timeout=tunables('YMCA_VIEW_TIMEOUT'))
+    def __init__(self, original_interaction: discord.Interaction, typ: str, return_view, mc: MikoCore):
+        self.mc = mc
+        super().__init__(timeout=self.mc.tunables('YMCA_VIEW_TIMEOUT'))
         self.original_interaction = original_interaction
-        self.u = MikoMember(user=original_interaction.user, client=original_interaction.client)
         self.return_view = return_view
         self.typ = typ
         self.msg: discord.Message = return_view.msg
@@ -74,20 +84,20 @@ class LogChannel(discord.ui.View):
         match self.typ:
             case 'GREEN_BOOK':
                 self.context = "Swim Test Book"
-                self.column = "ymca_green_book_channel"
-                self.log_channel = await self.u.ymca_green_book_channel
-            case 'SUPPLIES':
-                self.context = "Supply Needs"
-                self.column = "ymca_supplies_channel"
-                self.log_channel = await self.u.ymca_supplies_channel
-            case 'CHECKLIST':
-                self.context = "Checklists"
-                self.column = "ymca_checklist_channel"
-                self.log_channel = await self.u.ymca_checklist_channel
-            case 'INTRODUCTIONS':
-                self.context = "Introductions"
-                self.column = "introductions_channel"
-                self.log_channel = await self.u.introductions_channel
+                self.column = "ymca_green_book_announce_channel"
+                self.log_channel = self.mc.guild.ymca_green_book_announce_channel
+            # case 'SUPPLIES':
+            #     self.context = "Supply Needs"
+            #     self.column = "ymca_supplies_channel"
+            #     self.log_channel = await self.mc.guild.ymca_supplies_channel
+            # case 'CHECKLIST':
+            #     self.context = "Checklists"
+            #     self.column = "ymca_checklist_channel"
+            #     self.log_channel = await self.mc.guild.ymca_checklist_channel
+            # case 'INTRODUCTIONS':
+            #     self.context = "Introductions"
+            #     self.column = "introductions_channel"
+            #     self.log_channel = await self.mc.guild.introductions_channel
             case _:
                 self.context = None
                 self.column = None
@@ -108,12 +118,12 @@ class LogChannel(discord.ui.View):
 
         temp.append(
             "Use the dropdown below to set the channel "
-            f"that {self.u.client.user.mention} will send new {self.context} entries "
+            f"that {self.mc.user.client.user.mention} will send new {self.context} entries "
             "to. Select `Deselect Channel` to remove current channel "
             "(if any)."
             "\n\n"
             "**Note**: If your channel does not appear, it could be "
-            f"because {self.u.client.user.mention} does not have `Send Messages` and/or `View Channel` "
+            f"because {self.mc.user.client.user.mention} does not have `Send Messages` and/or `View Channel` "
             "permissions in that channel."
             "\n\n"
             "Press the `Use ID` "
@@ -147,18 +157,18 @@ class LogChannel(discord.ui.View):
                         f"have {' or '.join(er)} "
                         "permissions in that channel.**"
                     )
-                    color = GREEN_BOOK_FAIL_COLOR
+                    color = self.mc.tunables('GREEN_BOOK_FAIL_COLOR')
                 else:
                     desc.append(
                         f"✅ **Success! Set {channel.mention} as the {self.context} log channel. "
                         "To unset this channel, press the `Deselect Channel` button.**"
                     )
                     await db.execute(
-                        f"UPDATE SERVERS SET {self.column}='{channel.id}' "
-                        f"WHERE server_id='{self.original_interaction.guild.id}'"
+                        f"UPDATE GUILD_SETTINGS SET {self.column}='{channel.id}' "
+                        f"WHERE guild_id='{self.original_interaction.guild.id}'"
                     )
                     self.log_channel = channel
-                    color = GREEN_BOOK_SUCCESS_COLOR
+                    color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
 
             case 'DESELECT':
                 if self.log_channel is not None:
@@ -167,24 +177,24 @@ class LogChannel(discord.ui.View):
                         f"{self.context} log updates.**"
                     )
                     await db.execute(
-                        f"UPDATE SERVERS SET {self.column}=NULL WHERE "
-                        f"server_id='{self.original_interaction.guild.id}'"
+                        f"UPDATE GUILD_SETTINGS SET {self.column}=NULL WHERE "
+                        f"guild_id='{self.original_interaction.guild.id}'"
                     )
                     self.log_channel = None
-                    color = GREEN_BOOK_SUCCESS_COLOR
+                    color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
                 else:
                     desc.append(
                         f"⚠ Error: There is no active {self.context} log channel."
                     )
-                    color = GREEN_BOOK_WARN_COLOR
+                    color = self.mc.tunables('GREEN_BOOK_WARN_COLOR')
                 
             case _:
-                color = GREEN_BOOK_NEUTRAL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR')
 
         desc.append("\n\n")
         desc.append(''.join(self.__log_channel_description()))
         embed = discord.Embed(description=''.join(desc), color=color)
-        embed.set_author(icon_url=self.u.guild.icon, name=f"{self.u.guild} {self.context}")
+        embed.set_author(icon_url=self.mc.guild.guild.icon, name=f"{self.mc.guild.guild} {self.context}")
 
         self.clear_items()
         self.add_item(self.SelectLogChannel())
@@ -213,7 +223,7 @@ class LogChannel(discord.ui.View):
         async def callback(self, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message()
             try: await self.view.return_view.respond()
-            except Exception as e: print(e)
+            except Exception as e: LOGGER.error(f"BackToCallerButton failed: {e}")
 
 
     class LogChannelButton(discord.ui.Button):

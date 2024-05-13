@@ -58,6 +58,7 @@ def assign_tunables(val):
         try:
             if tunable[1] == "TRUE": TUNABLES[tunable[0]] = True
             if tunable[1] == "FALSE": TUNABLES[tunable[0]] = False
+            if tunable[1][0:2] == "0x": TUNABLES[tunable[0]] = int(tunable[1], 16)
             elif tunable[1] not in ["TRUE", "FALSE"]:
                 if tunable[1] is not None and tunable[1].isdigit(): TUNABLES[tunable[0]] = int(tunable[1])
                 else: TUNABLES[tunable[0]] = tunable[1]

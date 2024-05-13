@@ -21,7 +21,7 @@ class EightBall(commands.Cog):
         elif mc.profile.cmd_enabled('EIGHT_BALL') == 2:
             await ctx.send(mc.tunables('COMMAND_DISABLED_MESSAGE'), silent=True)
             return
-        await mc.increment_statistic('EIGHT_BALL')
+        await mc.user.increment_statistic('EIGHT_BALL')
 
         user = ctx.message.author
         if len(args) == 0:

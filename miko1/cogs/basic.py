@@ -490,7 +490,7 @@ class Basic(commands.Cog):
         if await u.bot_permission_level <= 3 and ctx.author.id != ctx.guild.owner.id:
             return
         
-        if args == (): args = ["None"]
+        if args == []: args = ["None"]
         match args[0].lower():
 
             # React subcommand

@@ -21,7 +21,7 @@ class CoinFlip(commands.Cog):
         elif mc.profile.cmd_enabled('COIN_FLIP') == 2:
             await ctx.send(mc.tunables('COMMAND_DISABLED_MESSAGE'), silent=True)
             return
-        await mc.increment_statistic('COIN_FLIP')
+        await mc.user.increment_statistic('COIN_FLIP')
         
         user = ctx.message.author
         coin = ['Heads', 'Tails']

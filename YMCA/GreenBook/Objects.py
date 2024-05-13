@@ -7,13 +7,15 @@ File containing green book backend
 
 
 import discord
+import logging
 import time
 import uuid # for generating unique entry IDs
 
 from Database.MikoCore import MikoCore
 from Database.MySQL import AsyncDatabase
 from misc.misc import sanitize_name # for sanitizing user input
-db = AsyncDatabase("GreenBook.Objects.py")
+db = AsyncDatabase(__file__)
+LOGGER = logging.getLogger()
 
 
 class PersonUpdate:
@@ -47,21 +49,23 @@ class PersonUpdate:
 
 class Person:
     def __init__(self, creator_id: int=0, eid: str=None, first: str=None, last: str=None, age: int=0, pass_time: int=0, wristband: str="GREEN", camp: str=None, new=False):
-        self.creator_id = creator_id
-        self.eid = eid
-        self.first = first
-        self.last = last
-        self.age = age
-        self.pass_time = pass_time
-        self.wristband = wristband
-        self.camp = camp
-        self.new = new
+        try:
+            self.creator_id = creator_id
+            self.eid = eid
+            self.first = first
+            self.last = last
+            self.age = age
+            self.pass_time = pass_time
+            self.wristband = wristband
+            self.camp = camp
+            self.new = new
 
-        self.__emojis = {
-            'GREEN': "🟢",
-            'YELLOW': "🟡",
-            'RED': "🔴"
-        }
+            self.__emojis = {
+                'GREEN': "🟢",
+                'YELLOW': "🟡",
+                'RED': "🔴"
+            }
+        except Exception as e: LOGGER.error(f"Person object creation failed: {e}")
     
     def __str__(self):
         
@@ -154,7 +158,7 @@ class Person:
             )
         if upd:
             upd_cmd.append(
-                f" WHERE server_id='{modifier.guild.id}' AND entry_id='{self.eid}'"
+                f" WHERE guild_id='{modifier.guild.id}' AND entry_id='{self.eid}'"
             )
             await db.execute(''.join(upd_cmd))
 
@@ -225,7 +229,7 @@ class GreenBook:
     async def total_entries(self) -> int:
         val = await db.execute(
             "SELECT COUNT(*) FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-            f"server_id='{self.mc.guild.guild.id}'"
+            f"guild_id='{self.mc.guild.guild.id}'"
         )
         if val == [] or val is None: return 0
         return int(val)
@@ -233,7 +237,7 @@ class GreenBook:
     async def recent_entries(self, offset: int=0, order: str="pass_time DESC") -> list[Person]:
         val = await db.execute(
             "SELECT user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-            f"server_id='{self.mc.guild.guild.id}' "
+            f"guild_id='{self.mc.guild.guild.id}' "
             f"ORDER BY {order} LIMIT {self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')} OFFSET {offset}"
         )
         if val == [] or val is None: return []
@@ -272,7 +276,7 @@ class GreenBook:
         if len(query) > 1:
             val = await db.execute(
                 "SELECT user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-                f"server_id='{self.u.guild.id}' AND "
+                f"guild_id='{self.mc.guild.guild.id}' AND "
                 f"first_name='{query[0]}' AND "
                 f"last_name='{query[1]}' "
                 "ORDER BY last_name,pass_time DESC"
@@ -281,7 +285,7 @@ class GreenBook:
         if val == [] or val is None:
             val = await db.execute(
                 "SELECT user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-                f"server_id='{self.u.guild.id}' AND "
+                f"guild_id='{self.mc.guild.guild.id}' AND "
                 f"(first_name LIKE '%{query[0]}%' OR "
                 f"last_name LIKE '%{query[0]}%' OR "
                 f"camp_name LIKE '%{query[0]}%' OR "
@@ -308,19 +312,18 @@ class GreenBook:
         return plist
     
     async def create(self, first: str, last: str, age: int, wristband: str, camp: str=None) -> Person:
-
+        
         first = sanitize_name(first)
         last = sanitize_name(last)
         camp = sanitize_name(camp)
 
         val = await db.execute(
             "SELECT user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name FROM YMCA_GREEN_BOOK_ENTRIES WHERE "
-            f"server_id='{self.u.guild.id}' AND "
+            f"guild_id='{self.mc.guild.guild.id}' AND "
             f"first_name='{first.upper()}' AND "
             f"last_name='{last.upper()}'"
             # f"age='{age}'"
         )
-
         # This line could cause issues in the future.
         if val != [] and val is not None:
             return Person(
@@ -344,8 +347,8 @@ class GreenBook:
         else: cmp = f"'{camp.upper()}'"
         pass_time = int(time.time())
         await db.execute(
-            "INSERT INTO YMCA_GREEN_BOOK_ENTRIES (server_id,user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name) VALUES "
-            f"('{self.u.guild.id}', '{self.u.user.id}', '{eid}', '{first.upper()}', '{last.upper()}', '{age}', '{pass_time}', '{wristband}', {cmp})"
+            "INSERT INTO YMCA_GREEN_BOOK_ENTRIES (guild_id,user_id,entry_id,first_name,last_name,age,pass_time,wristband_color,camp_name) VALUES "
+            f"('{self.mc.guild.guild.id}', '{self.mc.user.user.id}', '{eid}', '{first.upper()}', '{last.upper()}', '{age}', '{pass_time}', '{wristband}', {cmp})"
         )
 
         rp = Person(
@@ -361,16 +364,16 @@ class GreenBook:
         )
 
         try:
-            ch = await self.mc.guild.ymca_green_book_announce_channel
+            ch = self.mc.guild.ymca_green_book_announce_channel
             if ch is not None:
                 await ch.send(
                     content=(
-                        f"{self.u.user.mention} (`{await self.u.username}`) added `{rp.last}`, `{rp.first}`『`Age {rp.age}`』to the book "
-                        f"as a {rp.wristband_emoji} `{rp.wristband}` band on {rp.pass_time_formatted} using {tunables('SLASH_COMMAND_SUGGEST_BOOK')}"
+                        f"{self.mc.user.user.mention} (`{self.mc.user.username}`) added `{rp.last}`, `{rp.first}`『`Age {rp.age}`』to the book "
+                        f"as a {rp.wristband_emoji} `{rp.wristband}` band on {rp.pass_time_formatted} using {self.mc.tunables('SLASH_COMMAND_SUGGEST_BOOK')}"
                     ),
                     allowed_mentions=discord.AllowedMentions(users=False),
                     silent=True
                 )
-        except: pass
+        except: LOGGER.error(f"Could not send book entry announcement to guild {self.mc.guild.guild.name}")
 
         return rp

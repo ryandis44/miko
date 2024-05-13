@@ -1,31 +1,46 @@
+'''
+File containing green book front end UI
+
+*Part of YMCA Internship
+'''
+
+
+
 import discord
-from misc.view_misc import LogChannel, ModalTryAgain, check_modal_error
-from Database.tunables import *
-from YMCA.GreenBook.Objects import GreenBook, Person
-from Database.GuildObjects import MikoMember
+import logging
+
+from Database.MikoCore import MikoCore
 from Database.MySQL import AsyncDatabase
+from Database.tunables import tunables # for some functions that cannot accept MikoCore
 from discord.ext.commands import Context
-db = AsyncDatabase("GreenBook.UI.py")
+from misc.view_misc import LogChannel, ModalTryAgain, check_modal_error
+from YMCA.GreenBook.Objects import GreenBook, Person
+db = AsyncDatabase(__file__)
+LOGGER = logging.getLogger()
 
 
 class BookView(discord.ui.View):
     def __init__(self, original_interaction: discord.Interaction=None, ctx: Context=None, client: discord.Client=None):
-        super().__init__(timeout=tunables('YMCA_VIEW_TIMEOUT'))
+        self.mc = MikoCore()
+        super().__init__(timeout=self.mc.tunables('YMCA_VIEW_TIMEOUT'))
         self.original_interaction = original_interaction
+        self.client = original_interaction.client if client is None else client
         self.ctx = ctx
-        
-        self.u = MikoMember(user=original_interaction.user if ctx is None else ctx.author, client=original_interaction.client if client is None else client, check_exists=False)
-        self.book = GreenBook(self.u)
         
         self.res: list[Person] = None
         self.total_items = 0
         self.offset = 0
 
     async def ainit(self):
+        await self.mc.user_ainit(
+            user=self.original_interaction.user if self.ctx is None else self.ctx.author,
+            client=self.client
+        )
+        self.book = GreenBook(self.mc)
         await self.respond(init=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.id == self.u.user.id
+        return interaction.user.id == self.mc.user.user.id
 
     async def on_timeout(self) -> None:
         try:
@@ -49,7 +64,7 @@ class BookView(discord.ui.View):
             temp.append(
                 "The YMCA Swim Test Book for keeping track of swim tests.\n"
                 "This book can be accessed any time in this server "
-                f"using {tunables('SLASH_COMMAND_SUGGEST_BOOK')}.\n"
+                f"using {self.mc.tunables('SLASH_COMMAND_SUGGEST_BOOK')}.\n"
                 ""
                 "Use the buttons below to search, add, or modify entries "
                 "in the Swim Test Book.\n\n"
@@ -64,10 +79,10 @@ class BookView(discord.ui.View):
                 temp.append(f"\n... and {(total_entries - self.total_items):,} more\n\n")
             
 
-            embed = discord.Embed(description=''.join(temp), color=GREEN_BOOK_NEUTRAL_COLOR)
+            embed = discord.Embed(description=''.join(temp), color=self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR'))
             embed.set_author(
-                icon_url=self.u.guild.icon,
-                name=f"{self.u.guild} Swim Test Book"
+                icon_url=self.mc.guild.guild.icon,
+                name=f"{self.mc.guild.guild.name} Swim Test Book"
             )
             return embed
         
@@ -76,29 +91,16 @@ class BookView(discord.ui.View):
         self.add_item(NewEntry(bview=self))
         self.add_item(SearchButton(bview=self))
         self.add_item(AllEntriesButton())
-        if self.u.user.guild_permissions.manage_guild:
+        if self.mc.user.user.guild_permissions.manage_guild:
             self.add_item(LogChannelButton(bview=self))
-        # if admin, add more stuff self.add_item(admin)
-        # if total_entries > tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT'):
-        #     self.__determine_button_status()
-        #     f = FirstButton()
-        #     p = PrevButton()
-        #     n = NextButton()
-        #     l = LastButton()
-        #     f.disabled = p.disabled = self.button_status['p']
-        #     l.disabled = n.disabled = self.button_status['n']
-        #     self.add_item(f)
-        #     self.add_item(p)
-        #     self.add_item(n)
-        #     self.add_item(l)
 
         if init:
             try:
                 self.msg = await self.original_interaction.original_response()
             except:
                 try:
-                    self.msg = await self.ctx.reply(content=tunables('LOADING_EMOJI'))
-                except Exception as e: print(e)
+                    self.msg = await self.ctx.reply(content=self.mc.tunables('LOADING_EMOJI'))
+                except Exception as e: LOGGER.error(f"GreenBook failed to send initial response: {e}")
                 
         await self.msg.edit(
             content=None,
@@ -121,17 +123,17 @@ class BookView(discord.ui.View):
 
             if self.total_items == 0:
                 temp.append(f"There are no entries in this book.")
-                color = GREEN_BOOK_FAIL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_FAIL_COLOR')
             else:
                 temp.append("__`[Last Name, First Name]`__\n")
-                color = GREEN_BOOK_NEUTRAL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR')
             cnt = 0
             for result in self.res:
                 temp.append(f"`{cnt+1+self.offset}.` {result}\n")
                 cnt += 1
 
             embed = discord.Embed(description=''.join(temp), color=color)
-            embed.set_author(icon_url=self.u.guild.icon, name=f"{self.u.guild} Swim Test Book")
+            embed.set_author(icon_url=self.mc.guild.guild.icon, name=f"{self.mc.guild.guild.name} Swim Test Book")
             embed.set_footer(
                 text=(
                     f"Showing entries {self.offset+1 if cnt > 0 else 0} - {self.offset+cnt} "
@@ -147,12 +149,12 @@ class BookView(discord.ui.View):
         self.add_item(SelectEntries(bview=self, res=self.res))
         self.add_item(SearchButton(bview=self))
         self.add_item(NewEntry(bview=self))
-        if self.total_items > tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT'):
+        if self.total_items > self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT'):
             self.__determine_button_status()
-            f = FirstButton()
-            p = PrevButton()
-            n = NextButton()
-            l = LastButton()
+            f = FirstButton(self.mc)
+            p = PrevButton(self.mc)
+            n = NextButton(self.mc)
+            l = LastButton(self.mc)
             f.disabled = p.disabled = self.button_status['p']
             l.disabled = n.disabled = self.button_status['n']
             self.add_item(f)
@@ -169,13 +171,13 @@ class BookView(discord.ui.View):
     def __determine_button_status(self) -> None:
         self.button_status = {'p': True, 'n': True}
         if self.offset == 0: self.button_status = {'p': True, 'n': False}
-        elif self.offset + tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT') >= self.total_items: self.button_status = {'p': False, 'n': True}
+        elif self.offset + self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT') >= self.total_items: self.button_status = {'p': False, 'n': True}
         elif self.offset > 0 and self.offset < self.total_items: self.button_status = {'p': False, 'n': False}
     
     def __check_offset(self) -> None:
+        if self.offset + self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT') >= self.total_items: self.offset = self.total_items - self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
         if self.offset < 0: self.offset = 0
-        elif self.offset + tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT') >= self.total_items: self.offset = self.total_items - tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
-
+        
     # Response after completing search modal
     async def respond_modal_search(self, modal=None, search=True) -> None:
         self.all = False
@@ -194,18 +196,18 @@ class BookView(discord.ui.View):
 
             if self.total_items == 0:
                 temp.append(f"Could not find an entry matching `{modal.name.value}`")
-                color = GREEN_BOOK_FAIL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_FAIL_COLOR')
             else:
                 if search: temp.append(f"__Search results__ ")
                 temp.append("__`[Last Name, First Name]`__\n")
-                color = GREEN_BOOK_NEUTRAL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR')
             cnt = 0
-            for result in self.res[self.offset:self.offset+tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')]:
+            for result in self.res[self.offset:self.offset+self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')]:
                 temp.append(f"`{cnt+1+self.offset}.` {result}\n")
                 cnt += 1
 
             embed = discord.Embed(description=''.join(temp), color=color)
-            embed.set_author(icon_url=self.u.guild.icon, name=f"{self.u.guild} Swim Test Book")
+            embed.set_author(icon_url=self.mc.guild.guild.icon, name=f"{self.mc.guild.guild.name} Swim Test Book")
             embed.set_footer(
                 text=(
                     f"Showing entries {self.offset+1 if cnt > 0 else 0} - {self.offset+cnt} "
@@ -218,15 +220,15 @@ class BookView(discord.ui.View):
         b = BackToMainButton(bview=self)
         b.row = 2
         self.add_item(b)
-        self.add_item(SelectEntries(bview=self, res=self.res[self.offset:self.offset+tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')]))
+        self.add_item(SelectEntries(bview=self, res=self.res[self.offset:self.offset+self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')]))
         self.add_item(SearchButton(bview=self))
         self.add_item(NewEntry(bview=self))
-        if self.total_items > tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT'):
+        if self.total_items > self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT'):
             self.__determine_button_status()
-            f = FirstButton()
-            p = PrevButton()
-            n = NextButton()
-            l = LastButton()
+            f = FirstButton(self.mc)
+            p = PrevButton(self.mc)
+            n = NextButton(self.mc)
+            l = LastButton(self.mc)
             f.disabled = p.disabled = self.button_status['p']
             l.disabled = n.disabled = self.button_status['n']
             self.add_item(f)
@@ -239,24 +241,24 @@ class BookView(discord.ui.View):
             embed=__search_embed(),
             view=self
         )
-        await self.u.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_SEARCHED')
+        await self.mc.user.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_SEARCHED')
 
     # Response after choosing someone from the dropdown
     async def respond_select_person(self, p: Person) -> None:
         async def __selected_person_embed() -> discord.Embed:
             embed = discord.Embed(
                 description=''.join(await self.__detailed_entry_embed_description(p=p)),
-                color=GREEN_BOOK_NEUTRAL_COLOR
+                color=self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR')
             )
             embed.set_author(
-                icon_url=self.u.guild.icon,
-                name=f"{self.u.guild} Swim Test Book"
+                icon_url=self.mc.guild.guild.icon,
+                name=f"{self.mc.guild.guild.name} Swim Test Book"
             )
             return embed
         self.clear_items()
         self.add_item(BackToMainButton(bview=self))
         self.add_item(EditEntry(bview=self, p=p))
-        if self.u.user.guild_permissions.manage_guild:
+        if self.mc.user.user.guild_permissions.manage_guild:
             self.add_item(DeleteEntry(bview=self, p=p))
         self.add_item(NewEntry(bview=self, p=p))
         self.add_item(SearchButton(bview=self))
@@ -315,12 +317,12 @@ class BookView(discord.ui.View):
         match t:
             
             case 'EDIT':
-                if await p.edit(modal=modal, modifier=self.u.user):
+                if await p.edit(modal=modal, modifier=self.mc.user.user):
                     desc.append(
                         f":white_check_mark: __**Success! The entry for  `{p.last}, {p.first}`  has been updated.**__"
                     )
-                    color = GREEN_BOOK_SUCCESS_COLOR
-                    await self.u.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_EDITED')
+                    color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
+                    await self.mc.user.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_EDITED')
         
             case 'NEW':
                 wristband = modal.wristband.value
@@ -338,13 +340,13 @@ class BookView(discord.ui.View):
                     desc.append(
                         f":white_check_mark: __**Success!  `{p.last}, {p.first}`  has been added to the Swim Test Book.**__"
                     )
-                    color = GREEN_BOOK_SUCCESS_COLOR
+                    color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
                 else:
                     desc.append(
                         f":exclamation:  __**`{p.last}, {p.first}`  is already in the Swim Test Book. Here is their info:**__"
                     )
-                    color = GREEN_BOOK_WARN_COLOR
-                await self.u.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_CREATED')
+                    color = self.mc.tunables('GREEN_BOOK_WARN_COLOR')
+                await self.mc.user.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_CREATED')
 
             case 'DELETE_WARN':
                 desc.append(
@@ -352,24 +354,24 @@ class BookView(discord.ui.View):
                     "Confirm deletion?**__"
                 )
                 history=False
-                color = GREEN_BOOK_WARN_COLOR
+                color = self.mc.tunables('GREEN_BOOK_WARN_COLOR')
             
             case 'DELETE_CONFIRM':
                 desc.append(
                     f":white_check_mark: __**Success!  `{p.last}, {p.first}`  has been removed from the Swim Test Book.**__"
                 )
-                color = GREEN_BOOK_SUCCESS_COLOR
+                color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
                 await p.delete()
-                await self.u.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_DELETED')
+                await self.mc.user.increment_statistic('YMCA_GREEN_BOOK_ENTRIES_DELETED')
             
             case 'DELETE_CANCEL':
                 desc.append(
                     f":x: __**Cancelled.  `{p.last}, {p.first}`  was not removed from the Swim Test Book.**__"
                 )
-                color = GREEN_BOOK_FAIL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_FAIL_COLOR')
                 
             case _:
-                color = GREEN_BOOK_NEUTRAL_COLOR
+                color = self.mc.tunables('GREEN_BOOK_NEUTRAL_COLOR')
 
 
 
@@ -377,7 +379,7 @@ class BookView(discord.ui.View):
             desc.append("\n\n")
             desc.append(''.join(await self.__detailed_entry_embed_description(p=p, history=history)))
         embed = discord.Embed(description=''.join(desc), color=color)
-        embed.set_author(icon_url=self.u.guild.icon, name=f"{self.u.guild} Swim Test Book")
+        embed.set_author(icon_url=self.mc.guild.guild.icon, name=f"{self.mc.guild.guild.name} Swim Test Book")
 
         self.clear_items()
         match t:
@@ -391,7 +393,7 @@ class BookView(discord.ui.View):
             case _:
                 self.add_item(BackToMainButton(bview=self))
                 self.add_item(EditEntry(bview=self, p=p))
-                if self.u.user.guild_permissions.manage_guild:
+                if self.mc.user.user.guild_permissions.manage_guild:
                     self.add_item(DeleteEntry(bview=self, p=p))
                 self.add_item(NewEntry(bview=self, p=p))
                 self.add_item(SearchButton(bview=self))
@@ -404,11 +406,12 @@ class BookView(discord.ui.View):
 
 class FirstButton(discord.ui.Button):
 
-    def __init__(self):
+    def __init__(self, mc: MikoCore):
+        self.mc = mc
         super().__init__(
             style=discord.ButtonStyle.gray,
             label=None,
-            emoji=tunables('GENERIC_FIRST_BUTTON'),
+            emoji=self.mc.tunables('GENERIC_FIRST_BUTTON'),
             custom_id="first",
             row=4,
             disabled=True
@@ -421,11 +424,12 @@ class FirstButton(discord.ui.Button):
 
 class PrevButton(discord.ui.Button):
 
-    def __init__(self):
+    def __init__(self, mc: MikoCore):
+        self.mc = mc
         super().__init__(
             style=discord.ButtonStyle.gray,
             label=None,
-            emoji=tunables('GENERIC_PREV_BUTTON'),
+            emoji=self.mc.tunables('GENERIC_PREV_BUTTON'),
             custom_id="prev",
             row=4,
             disabled=True
@@ -433,16 +437,17 @@ class PrevButton(discord.ui.Button):
     
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.edit_message()
-        self.view.offset -= tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
+        self.view.offset -= self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
         await self.view.determine_response()
 
 class NextButton(discord.ui.Button):
 
-    def __init__(self):
+    def __init__(self, mc: MikoCore):
+        self.mc = mc
         super().__init__(
             style=discord.ButtonStyle.gray,
             label=None,
-            emoji=tunables('GENERIC_NEXT_BUTTON'),
+            emoji=self.mc.tunables('GENERIC_NEXT_BUTTON'),
             custom_id="next",
             row=4,
             disabled=True
@@ -450,16 +455,17 @@ class NextButton(discord.ui.Button):
     
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.edit_message()
-        self.view.offset += tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
+        self.view.offset += self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
         await self.view.determine_response()
 
 class LastButton(discord.ui.Button):
 
-    def __init__(self):
+    def __init__(self, mc: MikoCore):
+        self.mc = mc
         super().__init__(
             style=discord.ButtonStyle.gray,
             label=None,
-            emoji=tunables('GENERIC_LAST_BUTTON'),
+            emoji=self.mc.tunables('GENERIC_LAST_BUTTON'),
             custom_id="last",
             row=4,
             disabled=True
@@ -467,7 +473,7 @@ class LastButton(discord.ui.Button):
     
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.edit_message()
-        self.view.offset = self.view.total_items - tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
+        self.view.offset = self.view.total_items - self.mc.tunables('GREEN_BOOK_RECENT_ENTRIES_LIMIT')
         await self.view.determine_response()
 
 
@@ -540,7 +546,6 @@ class BackToMainButton(discord.ui.Button):
 async def on_modal_submit(modal, interaction: discord.Interaction, p: Person=None) -> None:
     e = check_modal_error(modal=modal)
     if e['age'] or e['wristband']: raise Exception
-
     # Message gets deleted during error handling; except and pass
     try: await interaction.response.edit_message()
     except: pass
@@ -553,14 +558,13 @@ async def on_modal_error(modal, error_interaction: discord.Interaction):
         temp = []
         if e['age']: temp.append("`Age` must be a number between 1 and 100.")
         if e['wristband']: temp.append("`Wristband Color` must be one letter: `r` for Red, `y` for Yellow, or `g` for Green (or leave empty for Green)")
-
+        
         try:
             modal.first.default = modal.first.value
             modal.last.default = modal.last.value
         except: pass
         if not e['age']: modal.age.default = modal.age.value
         if not e['wristband']: modal.wristband.default = modal.wristband.value
-
         if not error_interaction.response.is_done():
             await error_interaction.response.send_message(
                 content='\n'.join(temp),
@@ -619,7 +623,8 @@ class FullEntryModal(discord.ui.Modal):
             default=None
         )
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        await on_modal_submit(modal=self, interaction=interaction, p=self.p)
+        try: await on_modal_submit(modal=self, interaction=interaction, p=self.p)
+        except Exception as e: LOGGER.error(f"Failed to submit FullEntryModal for guild {interaction.guild.name} ({interaction.guild.id}): {e}")
     
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await on_modal_error(modal=self, error_interaction=interaction)
@@ -687,7 +692,7 @@ class EditEntry(discord.ui.Button):
         self.bview = bview
         self.p = p
         
-        if self.bview.u.user.guild_permissions.manage_guild:
+        if self.bview.mc.user.user.guild_permissions.manage_guild:
             self.m = FullEntryModal(bview=self.bview, p=self.p)
             self.m.first.default = p.first
             self.m.last.default = p.last
@@ -812,5 +817,6 @@ class LogChannelButton(discord.ui.Button):
         await LogChannel(
                 original_interaction=interaction,
                 typ="GREEN_BOOK",
-                return_view=self.view
+                return_view=self.view,
+                mc=self.bview.mc
             ).ainit()

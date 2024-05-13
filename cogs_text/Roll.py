@@ -23,7 +23,7 @@ class Roll(commands.Cog):
         elif mc.profile.cmd_enabled('ROLL') == 2:
             await ctx.send(mc.tunables('COMMAND_DISABLED_MESSAGE'), silent=True)
             return
-        await mc.increment_statistic('ROLL')
+        await mc.user.increment_statistic('ROLL')
         
         user = ctx.message.author
         roll = random.randint(0, 100)

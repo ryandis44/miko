@@ -124,7 +124,7 @@ Start the bot
 async def main() -> None:
     async with client:
         await load_cogs_text()
-        # await load_cogs_cmd()
+        await load_cogs_cmd()
         console.start()
         await connect_pool()
         # await load_cogs_console()

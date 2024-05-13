@@ -27,12 +27,13 @@ class Tester(commands.Cog):
         mc = MikoCore()
         await mc.user_ainit(user=ctx.author, client=self.client)
         if mc.user.bot_permission_level <= 4: return
-        await mc.increment_statistic('TESTER_CMD')
+        await mc.user.increment_statistic('TESTER_CMD')
         
         await ctx.send(
             f"{mc} // {mc.user} // Miko Permission level: {mc.user.bot_permission_level}\n"
             f"{mc.guild} // {mc.profile}\n"
-            # f""
+            f"{mc.user.username} // <t:{mc.user.last_interaction}:R>\n"
+            f"{mc.user.usernames}\n"
         )
 
 async def setup(client: commands.Bot):
