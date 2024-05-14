@@ -66,7 +66,8 @@ class MikoGuild:
             # database twice only if it does not exist. Else,
             # request settings only once.
             __db_string = (
-                "SELECT ymca_green_book_announce_channel,music_channel "
+                "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,track_playtime,track_voicetime,"
+                "nickname_in_ctx"
                 f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
             )
             __rawguild_settings = await db.execute(__db_string)
@@ -80,6 +81,10 @@ class MikoGuild:
             
             self.ymca_green_book_announce_channel = None if __rawguild_settings[0][0] is None else self.guild.get_channel(int(__rawguild_settings[0][0]))
             self.music_channel = None if __rawguild_settings[0][1] is None else self.guild.get_channel(int(__rawguild_settings[0][1]))
+            self.do_big_emojis = True if __rawguild_settings[0][2] == "TRUE" else False
+            self.do_track_playtime = True if __rawguild_settings[0][3] == "TRUE" else False
+            self.do_track_voicetime = True if __rawguild_settings[0][4] == "TRUE" else False
+            self.do_nickname_in_ctx = True if __rawguild_settings[0][5] == "TRUE" else False
     
     
     

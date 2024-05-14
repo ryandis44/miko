@@ -168,6 +168,7 @@ class LogChannel(discord.ui.View):
                         f"WHERE guild_id='{self.original_interaction.guild.id}'"
                     )
                     self.log_channel = channel
+                    await self.mc.guild_ainit(guild=self.mc.guild.guild, client=self.mc.guild.client) # refresh guild object since we changed settings
                     color = self.mc.tunables('GREEN_BOOK_SUCCESS_COLOR')
 
             case 'DESELECT':
