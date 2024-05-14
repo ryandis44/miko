@@ -67,6 +67,23 @@ class MikoUser:
             await self.__update_database(__rawuser)
 
         if self.is_member: await self.guild.ainit(guild=self.user.guild, client=self.client)
+        
+        __db_string = (
+            "SELECT big_emojis,track_playtime,track_voicetime "
+            f"FROM USER_SETTINGS WHERE user_id='{self.user.id}'"
+        )
+        __rawuser_settings = await db.execute(__db_string)
+        if __rawuser_settings == [] or __rawuser_settings is None:
+            await db.execute(
+                "INSERT INTO USER_SETTINGS (user_id) VALUES "
+                f"('{self.user.id}')"
+            )
+            LOGGER.info(f"Added user settings for {self.user.name} ({self.user.id}) to database.")
+            __rawuser_settings = await db.execute(__db_string)
+        
+        self.do_big_emojis = True if __rawuser_settings[0][0] == "TRUE" else False
+        self.do_track_playtime = True if __rawuser_settings[0][1] == "TRUE" else False
+        self.do_track_voicetime = True if __rawuser_settings[0][2] == "TRUE" else False
 
 
 
@@ -148,3 +165,12 @@ class MikoUser:
             await db.execute(
                 f"UPDATE USER_STATISTICS SET count=count+1 WHERE stat='{key}' AND user_id='{self.user.id}'"
             )
+    
+    
+    
+    @property
+    def miko_avatar(self):
+        if not self.is_member: return self.user.avatar
+        if self.user.guild_avatar is None: return self.user.avatar
+        elif self.guild.do_nickname_in_ctx: return self.user.guild_avatar
+        return self.user.avatar

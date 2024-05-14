@@ -9,6 +9,7 @@ import logging
 import time
 
 from Database.MikoGuild import MikoGuild
+from Database.MikoMessage import MikoMessage
 from Database.MikoUser import MikoUser
 from Database.MySQL import AsyncDatabase
 from Database.tunables import tunables, PermissionProfile
@@ -22,6 +23,9 @@ class MikoCore:
     def __init__(self) -> None:
         self.user = MikoUser()
         self.guild = MikoGuild()
+        self.message = MikoMessage()
+        
+        self.threads = [discord.ChannelType.public_thread, discord.ChannelType.private_thread, discord.ChannelType.news_thread]
         
         
         
@@ -38,6 +42,13 @@ class MikoCore:
     
     async def guild_ainit(self, guild: discord.Guild, client: discord.Client) -> MikoGuild:
         await self.guild.ainit(guild=guild, client=client)
+    
+    
+    
+    # Initialize MikoMessage and MikoUser (and MikoGuild if the user is also a member of a guild)
+    async def message_ainit(self, message: discord.Message, client: discord.Client) -> None:
+        await self.message.ainit(message=message, client=client)
+        await self.user_ainit(user=message.author, client=client)
     
     
     

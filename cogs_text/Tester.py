@@ -34,6 +34,7 @@ class Tester(commands.Cog):
             f"{mc.guild} // {mc.profile}\n"
             f"{mc.user.username} // <t:{mc.user.last_interaction}:R>\n"
             f"{mc.user.usernames}\n"
+            f"{mc.user.do_big_emojis} // {mc.guild.do_track_voicetime} // {mc.user.do_track_playtime}"
         )
 
 async def setup(client: commands.Bot):
