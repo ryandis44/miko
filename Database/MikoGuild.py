@@ -19,10 +19,6 @@ class MikoGuild:
         self.guild: discord.Guild = None
         self.client: discord.Client = None
         
-        # self.profile_text: str = "ACTIVE"
-        # self.emoji_id: int = None
-        # self.ymca_green_book_announce_channel: discord.TextChannel|None = None
-        
         
         
     def __str__(self) -> str: return f"MikoGuild | {self.guild}"
@@ -67,7 +63,7 @@ class MikoGuild:
             # request settings only once.
             __db_string = (
                 "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,track_playtime,track_voicetime,"
-                "nickname_in_ctx"
+                "nickname_in_ctx "
                 f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
             )
             __rawguild_settings = await db.execute(__db_string)

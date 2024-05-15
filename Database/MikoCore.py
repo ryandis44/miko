@@ -34,14 +34,14 @@ class MikoCore:
     
     
     # Initialize MikoUser and MikoGuild if the user is also a member of a guild (not a DM)
-    async def user_ainit(self, user: discord.User|discord.Member, client: discord.Client) -> MikoUser:
-        await self.user.ainit(user=user, client=client)
+    async def user_ainit(self, user: discord.User|discord.Member, client: discord.Client, check_exists: bool = True) -> MikoUser:
+        await self.user.ainit(user=user, client=client, check_exists=check_exists)
         if self.user.is_member: self.guild: MikoGuild = self.user.guild
     
     
     
-    async def guild_ainit(self, guild: discord.Guild, client: discord.Client) -> MikoGuild:
-        await self.guild.ainit(guild=guild, client=client)
+    async def guild_ainit(self, guild: discord.Guild, client: discord.Client, check_exists: bool = True) -> MikoGuild:
+        await self.guild.ainit(guild=guild, client=client, check_exists=check_exists)
     
     
     

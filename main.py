@@ -81,6 +81,7 @@ async def shutdown(): thread_kill() # pterodactyl panel shutdown command
 '''
 Events are detected here and passed to caller
 functions for processing
+Events are located in the Events directory
 '''
 
 @client.event
