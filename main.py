@@ -14,6 +14,7 @@ from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
 from Database.MySQL import connect_pool # connect to the database
 from Database.tunables import tunables_init, tunables # tunables used by the bot
+from Events.Message.Core import caller # core message event handler
 
 
 
@@ -78,6 +79,23 @@ async def shutdown(): thread_kill() # pterodactyl panel shutdown command
 
 
 '''
+Events are detected here and passed to caller
+functions for processing
+Events are located in the Events directory
+'''
+
+@client.event
+async def on_message(message):
+    try: await caller(message, client)
+    except Exception as e: LOGGER.error(f"Error in on_message: {e}")
+
+
+
+###########################################################################################################################
+
+
+
+'''
 Load all cogs from the cogs directories
 '''
 
@@ -91,14 +109,18 @@ async def load_cogs_text():
             LOGGER.error(f'Failed to load text cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All text cogs loaded.')
 
+# Cmd cogs only load the 'cog.py' file in each directory
+# This is because command cogs are typically more complex
+# than text cogs and have a larger backend
 async def load_cogs_cmd():
-    for filename in os.listdir('./cogs_cmd'):
-        try:
-            if filename.endswith('.py'):
-                await client.load_extension(f'cogs_cmd.{filename[:-3]}')
-                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog: {filename[:-3]}')
-        except Exception as e:
-            LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
+    for dir in os.listdir('./cogs_cmd'):
+        for filename in os.listdir(f'./cogs_cmd/{dir}'):
+            try:
+                if filename != 'cog.py': continue
+                await client.load_extension(f'cogs_cmd.{dir}.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog: {dir}/{filename[:-3]}')
+            except Exception as e:
+                LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All cmd cogs loaded.')
 
 async def load_cogs_console():

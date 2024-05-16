@@ -4,6 +4,8 @@ Debug testing file
 
 
 
+import os
+
 from Database.MikoCore import MikoCore
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -34,6 +36,8 @@ class Tester(commands.Cog):
             f"{mc.guild} // {mc.profile}\n"
             f"{mc.user.username} // <t:{mc.user.last_interaction}:R>\n"
             f"{mc.user.usernames}\n"
+            f"{mc.user.do_big_emojis} // {mc.guild.do_greet_new_members} // {mc.user.do_track_playtime}\n"
+            f"{mc.profile.feature_enabled('BIG_EMOJIS')}"
         )
 
 async def setup(client: commands.Bot):

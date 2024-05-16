@@ -1,13 +1,19 @@
+'''
+
+'''
+
+
+
 import discord
-from Database.GuildObjects import MikoMember, GuildProfile
-from Database.tunables import *
-db = AsyncDatabase("Settings.settings.py")
+
+from Database.MikoCore import MikoCore
+from Database.MySQL import AsyncDatabase
+db = AsyncDatabase(__file__)
 
 class Setting:
 
     def __init__(self,
-        u: MikoMember,
-        p: GuildProfile,
+        mc: MikoCore,
         name: str,
         desc: str,
         emoji: str,
@@ -16,27 +22,29 @@ class Setting:
         options: list[int, discord.SelectOption] = None
     ) -> None:
 
-        self.u = u
+        self.mc = mc
         self.name = name
         self.desc = desc
         self.emoji = emoji
         self.table = table
         self.col = col
         self.permission_level = 1
-        self.modifiable = p.feature_enabled(f'{col.upper()}')
+        self.modifiable = mc.profile.feature_enabled(f'{col.upper()}')
         self.modifiable = {
-            'val': True if self.modifiable == 1 else False,
+            'val': self.modifiable,
             'reason': \
-                "- Not enabled in this guild. -"\
+                "- Not enabled in this guild -"\
                     if self.modifiable == 0 else \
-                        "- Temporarily disabled in all guilds. -"
+                        "- Temporarily disabled in all guilds -" \
+                            if self.modifiable == 2 else \
+                                "- Disabled by guild admin -"
         }
         
         if options is not None: self.options = options
         else:
             match self.table:
-                case 'CHANNELS': ctx = "in this channel."
-                case 'SERVERS': ctx = "in this guild."
+                case 'CHANNEL_SETTINGS': ctx = "in this channel."
+                case 'GUILD_SETTINGS': ctx = "in this guild."
                 case _: ctx = "for yourself."
             
             self.options = [
@@ -64,11 +72,12 @@ class Setting:
     def __str__(self): return f"{self.name} Settings Object"
 
 
+
     async def value(self, channel_id=None):
         match self.table:
-            case 'CHANNELS': scope = f"channel_id='{channel_id}'"
-            case 'SERVERS': scope = f"server_id='{self.u.guild.id}'"
-            case _: scope = f"user_id='{self.u.user.id}'"
+            case 'CHANNEL_SETTINGS': scope = f"channel_id='{channel_id}'"
+            case 'GUILD_SETTINGS': scope = f"guild_id='{self.mc.guild.guild.id}'"
+            case _: scope = f"user_id='{self.mc.user.user.id}'"
             
         val = await db.execute(
             f"SELECT {self.col} FROM {self.table} WHERE "
@@ -77,6 +86,8 @@ class Setting:
         if val == "FALSE": return False
         elif val == "TRUE": return True
         return val
+    
+    
     
     async def value_str(self, channel_id=None):
         val = await self.value(channel_id=channel_id)
@@ -88,12 +99,20 @@ class Setting:
             if val == "DISABLED": state = "- DISABLED -"
             else: state = f"+ {val} +"
         
-        if not self.modifiable['val']: state = "- DISABLED -"
+        reason = ""
+        if self.table == "GUILD_SETTINGS":
+            if self.modifiable['val'] not in [1,3]:
+                state = "- DISABLED -"
+                reason = self.modifiable['reason']
+        else:
+            if self.modifiable['val'] not in [1]:
+                state = "- DISABLED -"
+                reason = self.modifiable['reason']
         
         return (
             "```diff\n"
             f"{state}\n"
-            f"{'' if self.modifiable['val'] else self.modifiable['reason']}"
+            f"{reason}"
             "```"
         )
     
@@ -103,9 +122,9 @@ class Setting:
         val = await self.value(channel_id=channel_id)
         
         match self.table:
-            case 'CHANNELS': scope = f"channel_id='{channel_id}'"
-            case 'SERVERS': scope = f"server_id='{self.u.guild.id}'"
-            case _: scope = f"user_id='{self.u.user.id}'"
+            case 'CHANNEL_SETTINGS': scope = f"channel_id='{channel_id}'"
+            case 'GUILD_SETTINGS': scope = f"guild_id='{self.mc.guild.guild.id}'"
+            case _: scope = f"user_id='{self.mc.user.user.id}'"
         
         # If state is None, then val must be bool. Set to opposite.
         if state is None: state = 'TRUE' if val else 'FALSE'

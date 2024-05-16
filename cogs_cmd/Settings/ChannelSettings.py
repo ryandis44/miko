@@ -1,39 +1,39 @@
 import discord
-from Settings.settings import Setting, tunables
+
+from cogs_cmd.Settings.settings import Setting
+from Database.tunables import tunables
 
 
-def all_channel_settings(u, p) -> list:
+def all_channel_settings(mc) -> list:
     return [
-        ChatGPT(u, p),
-        ChatGPTThreads(u, p),
+        TextAI(mc),
+        TextAIThreads(mc),
     ]
     
     
-class ChatGPT(Setting):
+class TextAI(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
-            name = "ChatGPT Integration",
-            desc = "Choose to enable ChatGPT Integration and what personality to use",
+            mc=mc,
+            name = "Generative Text AI Integration",
+            desc = "Choose to enable Generative Text AI Integration and what personality to use",
             emoji = "🌐",
-            table = "CHANNELS",
-            col = "chatgpt",
+            table = "CHANNEL_SETTINGS",
+            col = "text_ai_mode",
             options=tunables('OPENAI_PERSONALITIES')
         )
 
-class ChatGPTThreads(Setting):
+class TextAIThreads(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
-            name = "ChatGPT Threads",
-            desc = "Create threads (private chat sessions) in this channel when interacting with ChatGPT. Helps prevent clutter.",
+            mc=mc,
+            name = "Generative Text AI Threads",
+            desc = "Create threads (private chat sessions) in this channel when interacting with Generative Text AI. Helps prevent clutter.",
             emoji = "🧵",
-            table = "CHANNELS",
-            col = "chatgpt_threads",
+            table = "CHANNEL_SETTINGS",
+            col = "text_ai_threads",
             options=[
                 [
                     1,

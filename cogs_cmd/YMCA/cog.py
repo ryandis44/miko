@@ -12,11 +12,11 @@ from Database.MikoCore import MikoCore
 from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
-from YMCA.GreenBook.UI import BookView
+from cogs_cmd.YMCA.GreenBookUI import BookView
 load_dotenv()
 LOGGER = logging.getLogger()
 
-class BookCog(commands.Cog):
+class YMCA(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
     
@@ -49,4 +49,4 @@ class BookCog(commands.Cog):
 
 
 async def setup(client: commands.Bot):
-    await client.add_cog(BookCog(client))
+    await client.add_cog(YMCA(client))

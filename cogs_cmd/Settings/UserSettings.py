@@ -1,19 +1,18 @@
 import discord
-from Settings.settings import Setting, MikoMember
+from cogs_cmd.Settings.settings import Setting
 
-def all_user_settings(u, p) -> list:
+def all_user_settings(mc) -> list:
     return [
-        TrackPlaytime(u, p),
-        TrackVoicetime(u, p),
-        BigEmojis(u, p),
+        TrackPlaytime(mc),
+        TrackVoicetime(mc),
+        BigEmojis(mc),
     ]
 
 class TrackPlaytime(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Playtime Tracking",
             desc = "Track your playtime (only works when status set to ONLINE and your activity status is enabled for this guild)",
             emoji = "🎮",
@@ -23,10 +22,9 @@ class TrackPlaytime(Setting):
 
 # class PublicPlaytime(Setting):
 
-    # def __init__(self, u, p):
+    # def __init__(self, mc):
     #     super().__init__(
-    #         u=u,
-    #         p=p,
+    #         mc=mc,
 #             name = "Public Playtime (WIP)",
 #             desc = "Track playtime but only you can see your tracked stats.",
 #             emoji = "🎮",
@@ -36,10 +34,9 @@ class TrackPlaytime(Setting):
 
 class TrackVoicetime(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Voicetime Tracking",
             desc = "Track your voicetime per guild Miko is in.",
             emoji = "🔈",
@@ -49,10 +46,9 @@ class TrackVoicetime(Setting):
 
 # class PublicVoicetime(Setting):
 
-    # def __init__(self, u, p):
+    # def __init__(self, mc):
     #     super().__init__(
-    #         u=u,
-    #         p=p,
+    #         mc=mc,
 #             name = "Public Voicetime (WIP)",
 #             desc = "Track voicetime but only you can see your tracked stats.",
 #             emoji = "🎮",
@@ -62,10 +58,9 @@ class TrackVoicetime(Setting):
 
 class BigEmojis(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Big Emojis",
             desc = "Enlarge custom emojis for a better viewing experience (only works on non-default emojis)",
             emoji = "😂",
