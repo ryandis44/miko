@@ -32,7 +32,6 @@ class SettingsView(discord.ui.View):
         return self.channel.id
 
     async def ainit(self) -> None:
-        await self.mc.user_ainit(user=self.original_interaction.user, client=self.original_interaction.client)
         self.msg = await self.original_interaction.original_response()
         await self.main_page()
 
@@ -41,6 +40,8 @@ class SettingsView(discord.ui.View):
         except: pass
 
     async def main_page(self) -> None:
+        await self.mc.user_ainit(user=self.original_interaction.user, client=self.original_interaction.client)
+        
         temp = []
         temp.append(
             f"Most {self.mc.user.client.user.mention} Commands and features can\n"
