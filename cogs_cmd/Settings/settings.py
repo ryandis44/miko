@@ -31,11 +31,13 @@ class Setting:
         self.permission_level = 1
         self.modifiable = mc.profile.feature_enabled(f'{col.upper()}')
         self.modifiable = {
-            'val': True if self.modifiable == 1 else False,
+            'val': self.modifiable,
             'reason': \
-                "- Not enabled in this guild. -"\
+                "- Not enabled in this guild -"\
                     if self.modifiable == 0 else \
-                        "- Temporarily disabled in all guilds. -"
+                        "- Temporarily disabled in all guilds -" \
+                            if self.modifiable == 2 else \
+                                "- Disabled by guild admin -"
         }
         
         if options is not None: self.options = options
@@ -97,12 +99,20 @@ class Setting:
             if val == "DISABLED": state = "- DISABLED -"
             else: state = f"+ {val} +"
         
-        if not self.modifiable['val']: state = "- DISABLED -"
+        reason = ""
+        if self.table == "GUILD_SETTINGS":
+            if self.modifiable['val'] not in [1,3]:
+                state = "- DISABLED -"
+                reason = self.modifiable['reason']
+        else:
+            if self.modifiable['val'] not in [1]:
+                state = "- DISABLED -"
+                reason = self.modifiable['reason']
         
         return (
             "```diff\n"
             f"{state}\n"
-            f"{'' if self.modifiable['val'] else self.modifiable['reason']}"
+            f"{reason}"
             "```"
         )
     

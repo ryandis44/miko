@@ -16,8 +16,8 @@ class TextAI(Setting):
     def __init__(self, mc):
         super().__init__(
             mc=mc,
-            name = "ChatGPT Integration",
-            desc = "Choose to enable ChatGPT Integration and what personality to use",
+            name = "Generative Text AI Integration",
+            desc = "Choose to enable Generative Text AI Integration and what personality to use",
             emoji = "🌐",
             table = "CHANNEL_SETTINGS",
             col = "text_ai_mode",
@@ -29,8 +29,8 @@ class TextAIThreads(Setting):
     def __init__(self, mc):
         super().__init__(
             mc=mc,
-            name = "ChatGPT Threads",
-            desc = "Create threads (private chat sessions) in this channel when interacting with ChatGPT. Helps prevent clutter.",
+            name = "Generative Text AI Threads",
+            desc = "Create threads (private chat sessions) in this channel when interacting with Generative Text AI. Helps prevent clutter.",
             emoji = "🧵",
             table = "CHANNEL_SETTINGS",
             col = "text_ai_threads",

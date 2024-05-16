@@ -24,7 +24,7 @@ class SettingsView(discord.ui.View):
         if c.type in [discord.ChannelType.public_thread, discord.ChannelType.private_thread, discord.ChannelType.news_thread]:
             c = c.parent
 
-        return c if self.scope['type'] == "CHANNELS" else None
+        return c if self.scope['type'] == "CHANNEL_SETTINGS" else None
     
     @property
     def channel_id(self) -> int:
@@ -32,8 +32,7 @@ class SettingsView(discord.ui.View):
         return self.channel.id
 
     async def ainit(self) -> None:
-        self.mc.user_ainit(user=self.original_interaction.user, client=self.original_interaction.client)
-        await self.u.ainit()
+        await self.mc.user_ainit(user=self.original_interaction.user, client=self.original_interaction.client)
         self.msg = await self.original_interaction.original_response()
         await self.main_page()
 
@@ -68,8 +67,8 @@ class SettingsView(discord.ui.View):
         self.offset = 0
         match self.scope['type']:
             
-            case 'SERVERS':
-                if not await self.mc.user.manage_guild:
+            case 'GUILD_SETTINGS':
+                if not self.mc.user.manage_guild:
                     await interaction.response.send_message(
                         content=self.mc.tunables('SETTINGS_UI_NO_PERMISSION_GUILD'), ephemeral=True
                     )
@@ -77,8 +76,8 @@ class SettingsView(discord.ui.View):
                 self.scope['data'] = all_guild_settings(mc=self.mc)
                 self.scope['len'] = len(self.scope['data'])
             
-            case 'CHANNELS':
-                if not await self.mc.user.manage_channel(channel=self.channel):
+            case 'CHANNEL_SETTINGS':
+                if not self.mc.user.manage_channel(channel=self.channel):
                     await interaction.response.send_message(
                         content=self.mc.tunables('SETTINGS_UI_NO_PERMISSION_CHANNEL'), ephemeral=True
                     )
@@ -93,10 +92,11 @@ class SettingsView(discord.ui.View):
     async def settings_list_page(self, interaction: discord.Interaction, initial=False) -> None:
         if initial: await self.__set_scope(interaction=interaction)
         
-        await interaction.response.edit_message()
+        try: await interaction.response.edit_message()
+        except: pass
         temp = ["__Select a setting to modify"]
         
-        if self.scope['type'] == "CHANNELS": temp.append(
+        if self.scope['type'] == "CHANNEL_SETTINGS": temp.append(
             f" for {self.channel.mention}__:\n\n"
         )
         else: temp.append("__:\n\n")
@@ -137,10 +137,8 @@ class SettingsView(discord.ui.View):
         
     async def setting_page(self, s: Setting) -> None:
         
-        # print(s.options)
-        
         temp = []
-        if self.scope['type'] == "CHANNELS":
+        if self.scope['type'] == "CHANNEL_SETTINGS":
             msg = f" *in* {self.channel.mention}"
         else: msg = ""
         temp.append(
@@ -201,10 +199,10 @@ class SettingsView(discord.ui.View):
         await mc.user_ainit(user=interaction.user, client=interaction.client)
         check = True
         match self.scope['type']:
-            case "CHANNELS":
+            case "CHANNEL_SETTINGS":
                 if not mc.user.manage_channel(channel=self.channel): check = False
                 msg = self.mc.tunables('SETTINGS_UI_NO_PERMISSION_CHANNEL')
-            case "SERVERS":
+            case "GUILD_SETTINGS":
                 if not mc.user.manage_guild: check = False
                 msg = self.mc.tunables('SETTINGS_UI_NO_PERMISSION_GUILD')
         
@@ -273,13 +271,27 @@ class ChooseSetting(discord.ui.Select):
 class ChooseState(discord.ui.Select):
     def __init__(self, setting: Setting) -> None:
         self.s = setting
+        
+        # If in guild settings, allow user to change setting for everyone
+        # if that setting returns a modifiable value of 3.
+        # Else, a value of 3 means the setting is not modifiable for
+        # user and channel settings
+        #
+        # This setting ONLY enforces whether the dropdown box is clickable
+        if setting.table == "GUILD_SETTINGS":
+            if setting.modifiable['val'] in [1, 3]: disabled = False
+            else: disabled = True
+        else:
+            if setting.modifiable['val'] == 1: disabled = False
+            else: disabled = True
+            
         super().__init__(
             placeholder="Select an option",
             max_values=1,
             min_values=1,
             options=[option[1] for option in setting.options],
             row=1,
-            disabled=not setting.modifiable['val']
+            disabled=disabled
         )
     async def callback(self, interaction: discord.Integration) -> None:
         val = self.values[0]

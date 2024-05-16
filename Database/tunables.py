@@ -125,8 +125,16 @@ class PermissionProfile():
         self.__features = {'all_enabled': False, 'inverse': False}
         self.__handle_params()
 
+
+
     def __str__(self):
         return f"{self.profile} | {self.params}"
+    
+    
+    
+    def inject_guild(self, guild_settings: dict) -> None: self.__guild_settings = guild_settings
+    
+    
     
     def __handle_params(self) -> None:
         for option in self.params:
@@ -162,13 +170,16 @@ class PermissionProfile():
                 self.v[f'{prefix}_{cmd.upper()}'] = not inverse
             
     
+    
     # For the following two functions, return values mean:
     # - 0: Guild profile does not have command enabled
     # - 1: Guild profile and tunables have command enabled
     # - 2: Tunables does not have command enabled
+    # - 3: Guild owner does not have command enabled
     
     def cmd_enabled(self, cmd: str) -> int:
         if not tunables(f'COMMAND_ENABLED_{cmd.upper()}'): return 2
+        if self.__guild_settings.get(cmd.lower()) == False: return 3
         if self.__commands['all_enabled']:
             if self.__commands['inverse']: return 0
             return 1
@@ -180,6 +191,7 @@ class PermissionProfile():
     
     def feature_enabled(self, f: str) -> int:
         if not tunables(f'FEATURE_ENABLED_{f.upper()}'): return 2
+        if self.__guild_settings.get(f.lower()) == False: return 3
         if self.__features['all_enabled']:
             if self.__features['inverse']: return 0
             return 1

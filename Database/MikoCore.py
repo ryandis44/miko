@@ -80,8 +80,10 @@ class MikoCore:
     # profile is used
     @property
     def profile(self) -> PermissionProfile:
-        __profile = self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
-        if __profile is not None: return __profile
+        __profile: PermissionProfile = self.tunables(f'PERMS_PROFILE_{self.guild.profile_text}')
+        if __profile is not None:
+            __profile.inject_guild(self.guild.guild_settings)
+            return __profile
         else:
             LOGGER.warning(f"Guild profile '{self.guild.profile_text}' for guild {self.guild.guild.name} ({self.guild.guild.id}) not found. Using default 'ACTIVE' profile")
             return self.tunables('PERMS_PROFILE_ACTIVE')

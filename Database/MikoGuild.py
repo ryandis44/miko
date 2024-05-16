@@ -103,3 +103,14 @@ class MikoGuild:
 ###########################################################################################################################
     
     
+
+    @property
+    def guild_settings(self) -> dict:
+        return {
+            'ymca_green_book_announce_channel': self.ymca_green_book_announce_channel,
+            'music_channel': self.music_channel,
+            'big_emojis': self.do_big_emojis,
+            'greet_new_members': self.do_greet_new_members,
+            'notify_member_leave': self.do_notify_member_leave,
+            'nickname_in_ctx': self.do_nickname_in_ctx
+        }

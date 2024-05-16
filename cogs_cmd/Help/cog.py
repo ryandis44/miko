@@ -159,18 +159,26 @@ async def help_embed(mc: MikoCore) -> list:
     pr = mc.profile
     temp = []
     temp.append(
+        "```diff\n"
+        f"- {mc.user.client.user.name} is currently being updated to 3.0 and is "
+        "being rewritten from the ground up. Most features have not been migrated "
+        "to 3.0 yet so they are unavailable. -"
+        "```"
+        "\n\n"
         f"{mc.user.client.user.mention} help menu. Use `/help <category>` "
-        "for a more detailed explaination. "
+        "for a more detailed explaination."
+        "\n\n"
+        "Open source! https://github.com/ryandis44/Miko"
         "\n\n"
     )
 
 
 
-    if pr.feature_enabled('CHATGPT'):
+    if pr.feature_enabled('TEXT_AI_MODE') == 1:
         temp.append(
-            "🌐 __**ChatGPT Integration**__:\n"
-            f"> To use ChatGPT, open your settings menu ({mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')}) "
-            "in the channel you wish to use ChatGPT and select `Channel` -> `ChatGPT Integration`. From here, "
+            "🌐 __**Generative Text AI/ChatGPT Integration**__:\n"
+            f"> To use Generative Text AI/ChatGPT, open your settings menu ({mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')}) "
+            "in the channel you wish to use Generative Text AI and select `Channel` -> `Generative Text AI Integration`. From here, "
             "you can enable it and set its personality or disable it (per-channel) [must have `Manage Channel` "
             "permission in that channel]."
             "\n> \n"
@@ -180,6 +188,19 @@ async def help_embed(mc: MikoCore) -> list:
             "\n\n"
         )
 
+
+
+    if mc.guild.profile_text == "THEBOYS":
+        ymca_cmds = []
+        if pr.cmd_enabled('YMCA_GREEN_BOOK') == 1: ymca_cmds.append(f"> **{mc.tunables('SLASH_COMMAND_SUGGEST_BOOK')}**: Swim test book for tracking kids that can swim\n")
+        if len(ymca_cmds) > 0:
+            temp.append(
+                ":book: __**YMCA**__:\n"
+                f"> This guild has YMCA features enabled. See commands below:\n"
+            )
+            temp.append('> '.join(ymca_cmds))
+            temp.append("\n")
+        
 
 
     p = mc.tunables('COMMAND_PREFIX')

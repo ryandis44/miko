@@ -81,7 +81,7 @@ class MikoUser:
             LOGGER.info(f"Added user settings for {self.user.name} ({self.user.id}) to database.")
             __rawuser_settings = await db.execute(__db_string)
         
-        self.do_big_emojis = True if __rawuser_settings[0][0] == "TRUE" else False
+        self.__do_big_emojis = True if __rawuser_settings[0][0] == "TRUE" else False
         self.do_track_playtime = True if __rawuser_settings[0][1] == "TRUE" else False
         self.do_track_voicetime = True if __rawuser_settings[0][2] == "TRUE" else False
 
@@ -179,7 +179,7 @@ class MikoUser:
     
     @property
     def manage_guild(self) -> bool:
-        if self.is_member: return False
+        if not self.is_member: return False
         perms = self.user.guild_permissions
         if perms.administrator: return True
         if perms.manage_guild: return True
@@ -194,3 +194,11 @@ class MikoUser:
         if manage_channels: return True
         if self.bot_permission_level >= 5: return True
         return False
+    
+    
+    
+    # Guild big emoji enforcement
+    @property
+    def do_big_emojis(self) -> bool:
+        if not self.is_member: return self.__do_big_emojis
+        return self.__do_big_emojis if self.guild.do_big_emojis else False
