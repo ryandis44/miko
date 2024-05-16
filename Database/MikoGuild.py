@@ -8,6 +8,7 @@ import discord
 import logging
 
 from Database.MySQL import AsyncDatabase
+from misc.misc import sanitize_name
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 
@@ -46,7 +47,7 @@ class MikoGuild:
         if __rawguild == [] or __rawguild is None:
             await db.execute(
                 "INSERT INTO GUILDS (guild_id, name, owner_id, member_count) VALUES "
-                f"('{self.guild.id}', '{self.guild.name}', '{self.guild.owner_id}', '{self.guild.member_count}')"
+                f"('{self.guild.id}', '{sanitize_name(self.guild.name)}', '{self.guild.owner_id}', '{self.guild.member_count}')"
             )
             LOGGER.info(f"Added guild {self.guild.name} ({self.guild.id}) to database.")
             
@@ -56,37 +57,38 @@ class MikoGuild:
             self.profile_text = __rawguild[0][0]
             self.emoji_id = __rawguild[0][1]
             
+            # Update cache of database (i.e. name of server, server owner, etc)
             await self.__update_database(__rawguild)
             
-            # Check if guild settings exist. Request settings from
-            # database twice only if it does not exist. Else,
-            # request settings only once.
-            __db_string = (
-                "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,track_playtime,track_voicetime,"
-                "nickname_in_ctx "
-                f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
+        # Check if guild settings exist. Request settings from
+        # database twice only if it does not exist. Else,
+        # request settings only once.
+        __db_string = (
+            "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,greet_new_members,notify_member_leave,"
+            "nickname_in_ctx "
+            f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
+        )
+        __rawguild_settings = await db.execute(__db_string)
+        if __rawguild_settings == [] or __rawguild_settings is None:
+            await db.execute(
+                "INSERT INTO GUILD_SETTINGS (guild_id) VALUES "
+                f"('{self.guild.id}')"
             )
+            LOGGER.info(f"Added guild settings for {self.guild.name} ({self.guild.id}) to database.")
             __rawguild_settings = await db.execute(__db_string)
-            if __rawguild_settings == [] or __rawguild_settings is None:
-                await db.execute(
-                    "INSERT INTO GUILD_SETTINGS (guild_id) VALUES "
-                    f"('{self.guild.id}')"
-                )
-                LOGGER.info(f"Added guild settings for {self.guild.name} ({self.guild.id}) to database.")
-                __rawguild_settings = await db.execute(__db_string)
-            
-            self.ymca_green_book_announce_channel = None if __rawguild_settings[0][0] is None else self.guild.get_channel(int(__rawguild_settings[0][0]))
-            self.music_channel = None if __rawguild_settings[0][1] is None else self.guild.get_channel(int(__rawguild_settings[0][1]))
-            self.do_big_emojis = True if __rawguild_settings[0][2] == "TRUE" else False
-            self.do_track_playtime = True if __rawguild_settings[0][3] == "TRUE" else False
-            self.do_track_voicetime = True if __rawguild_settings[0][4] == "TRUE" else False
-            self.do_nickname_in_ctx = True if __rawguild_settings[0][5] == "TRUE" else False
+        
+        self.ymca_green_book_announce_channel = None if __rawguild_settings[0][0] is None else self.guild.get_channel(int(__rawguild_settings[0][0]))
+        self.music_channel = None if __rawguild_settings[0][1] is None else self.guild.get_channel(int(__rawguild_settings[0][1]))
+        self.do_big_emojis = True if __rawguild_settings[0][2] == "TRUE" else False
+        self.do_greet_new_members = True if __rawguild_settings[0][3] == "TRUE" else False
+        self.do_notify_member_leave = True if __rawguild_settings[0][4] == "TRUE" else False
+        self.do_nickname_in_ctx = True if __rawguild_settings[0][5] == "TRUE" else False
     
     
     
     async def __update_database(self, __rawguild: list) -> None:
         update_params = []
-        if self.guild.name != __rawguild[0][2]: update_params.append(f"name='{self.guild.name}'")
+        if sanitize_name(self.guild.name) != __rawguild[0][2]: update_params.append(f"name='{sanitize_name(self.guild.name)}'")
         if self.guild.owner_id != __rawguild[0][3]: update_params.append(f"owner_id='{self.guild.owner_id}'")
         if self.guild.member_count != __rawguild[0][4]: update_params.append(f"member_count='{self.guild.member_count}'")
         

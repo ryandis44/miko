@@ -1,25 +1,21 @@
-import asyncio
+'''
+Settings cog for allowing users to change their Miko settings
+'''
+
+
+
 import discord
-from discord.ext import commands
-from discord import app_commands
-from Database.GuildObjects import MikoTextChannel
-from cogs_cmd.Settings.Views import SettingsView
-from Database.tunables import *
-from Database.MySQL import Database
 import os
-from dotenv import load_dotenv
-load_dotenv()
 
-sc = Database("SettingsCog.py")
-
+from cogs_cmd.Settings.Views import SettingsView
+from Database.MikoCore import MikoCore
+from discord import app_commands
+from discord.ext import commands
 
 class SettingsCog(commands.Cog):
     def __init__(self, client):
         self.client: discord.Client = client
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     self.tree = app_commands.CommandTree(self.client)
 
 
     @app_commands.command(name="settings", description=f"{os.getenv('APP_CMD_PREFIX')}Modify Miko settings for yourself or this guild (if you have permission)")
@@ -35,12 +31,14 @@ class SettingsCog(commands.Cog):
         await SettingsView(original_interaction=interaction).ainit()
 
     async def interaction_check(self, interaction: discord.Interaction):
+        mc = MikoCore()
         
-        await MikoTextChannel(
-                channel=interaction.channel if interaction.channel.type not in THREAD_TYPES else interaction.channel.parent,
-                client=interaction.client
-            ).ainit()
-        await interaction.response.send_message(content=tunables('LOADING_EMOJI'), ephemeral=True)
+        await mc.user_ainit(user=interaction.user, client=interaction.client)
+        await mc.channel_ainit(
+            channel=interaction.channel if interaction.channel.type not in mc.threads else interaction.channel.parent,
+            client=interaction.client
+        )
+        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=True)
         return True
 
 async def setup(client: commands.Bot):

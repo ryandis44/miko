@@ -56,7 +56,7 @@ class MikoUser:
             self.last_interaction = int(time.time())
             await db.execute(
                 "INSERT INTO USERS (user_id, username, is_bot, last_interaction) VALUES "
-                f"('{self.user.id}', '{self.user.name}', '{str(1) if self.user.bot else str(0)}', '{self.last_interaction}')"
+                f"('{self.user.id}', '{sanitize_name(self.user.name)}', '{str(1) if self.user.bot else str(0)}', '{self.last_interaction}')"
             )
             LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to database.")
             
@@ -96,7 +96,7 @@ class MikoUser:
         if self.last_interaction != __rawuser[0][1]:
             update_params.append(f"last_interaction='{self.last_interaction}'")
         
-        self.username = self.user.name
+        self.username = sanitize_name(self.user.name)
         if self.username != __rawuser[0][2]:
             update_params.append(
                 f"{', 'if len(update_params) > 1 else ''}username='{self.username}'"
@@ -169,8 +169,28 @@ class MikoUser:
     
     
     @property
-    def miko_avatar(self):
+    def miko_avatar(self) -> discord.Asset:
         if not self.is_member: return self.user.avatar
         if self.user.guild_avatar is None: return self.user.avatar
         elif self.guild.do_nickname_in_ctx: return self.user.guild_avatar
         return self.user.avatar
+    
+    
+    
+    @property
+    def manage_guild(self) -> bool:
+        if self.is_member: return False
+        perms = self.user.guild_permissions
+        if perms.administrator: return True
+        if perms.manage_guild: return True
+        if self.bot_permission_level >= 5: return True
+        return False
+    
+    
+    
+    def manage_channel(self, channel: discord.TextChannel) -> bool:
+        if not self.is_member: return False
+        manage_channels = channel.permissions_for(self.user).manage_channels
+        if manage_channels: return True
+        if self.bot_permission_level >= 5: return True
+        return False

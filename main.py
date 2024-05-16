@@ -109,14 +109,18 @@ async def load_cogs_text():
             LOGGER.error(f'Failed to load text cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All text cogs loaded.')
 
+# Cmd cogs only load the 'cog.py' file in each directory
+# This is because command cogs are typically more complex
+# than text cogs and have a larger backend
 async def load_cogs_cmd():
-    for filename in os.listdir('./cogs_cmd'):
-        try:
-            if filename.endswith('.py'):
-                await client.load_extension(f'cogs_cmd.{filename[:-3]}')
-                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog: {filename[:-3]}')
-        except Exception as e:
-            LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
+    for dir in os.listdir('./cogs_cmd'):
+        for filename in os.listdir(f'./cogs_cmd/{dir}'):
+            try:
+                if filename != 'cog.py': continue
+                await client.load_extension(f'cogs_cmd.{dir}.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog: {dir}/{filename[:-3]}')
+            except Exception as e:
+                LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All cmd cogs loaded.')
 
 async def load_cogs_console():

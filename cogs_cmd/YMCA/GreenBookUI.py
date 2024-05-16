@@ -14,7 +14,7 @@ from Database.MySQL import AsyncDatabase
 from Database.tunables import tunables # for some functions that cannot accept MikoCore
 from discord.ext.commands import Context
 from misc.view_misc import LogChannel, ModalTryAgain, check_modal_error
-from YMCA.GreenBook.Objects import GreenBook, Person
+from cogs_cmd.YMCA.GreenBookObjects import GreenBook, Person
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 

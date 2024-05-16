@@ -1,62 +1,63 @@
-import discord
-from Settings.settings import Setting
+'''
+(insert how this works here)
+'''
 
-def all_guild_settings(u, p) -> list:
+
+
+from cogs_cmd.Settings.settings import Setting
+
+def all_guild_settings(mc) -> list:
     return [
-        BigEmojisGuild(u, p),
-        NickInCtx(u, p),
-        GreetNewMembers(u, p),
-        NotifyMemberLeave(u, p),
+        BigEmojisGuild(mc),
+        NickInCtx(mc),
+        GreetNewMembers(mc),
+        NotifyMemberLeave(mc),
     ]
 
 class BigEmojisGuild(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Guild Big Emojis",
             desc = "Enlarge custom emojis for a better viewing experience (only works on non-default emojis)",
             emoji = "😂",
-            table = "SERVERS",
+            table = "GUILD_SETTINGS",
             col = "big_emojis"
         )
 
 class NickInCtx(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Guild Nicknames in Context",
             desc = "Whether or not to use nicknames when referencing users in embeds",
             emoji = "✏",
-            table = "SERVERS",
+            table = "GUILD_SETTINGS",
             col = "nickname_in_ctx"
         )
 
 class GreetNewMembers(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Greet new members",
             desc = "Send a message to the system channel welcoming new members",
             emoji = "👋",
-            table = "SERVERS",
+            table = "GUILD_SETTINGS",
             col = "greet_new_members"
         )
 
 class NotifyMemberLeave(Setting):
 
-    def __init__(self, u, p):
+    def __init__(self, mc):
         super().__init__(
-            u=u,
-            p=p,
+            mc=mc,
             name = "Member leave messages",
             desc = "Send a message to system channel when a member leaves the server",
             emoji = "✌",
-            table = "SERVERS",
+            table = "GUILD_SETTINGS",
             col = "notify_member_leave"
         )
