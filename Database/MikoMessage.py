@@ -22,6 +22,10 @@ class MikoMessage:
     
     
     
+    def __str__(self) -> str: return f"MikoMessage | {self.message.author.name}"
+    
+    
+    
     async def ainit(self, message: discord.Message, client: Bot) -> None:
         self.message = message
         self.client = client

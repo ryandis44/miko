@@ -66,7 +66,7 @@ class MikoGuild:
         # request settings only once.
         __db_string = (
             "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,greet_new_members,notify_member_leave,"
-            "nickname_in_ctx "
+            "nickname_in_ctx,bruh_react "
             f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
         )
         __rawguild_settings = await db.execute(__db_string)
@@ -84,6 +84,7 @@ class MikoGuild:
         self.do_greet_new_members = True if __rawguild_settings[0][3] == "TRUE" else False
         self.do_notify_member_leave = True if __rawguild_settings[0][4] == "TRUE" else False
         self.do_nickname_in_ctx = True if __rawguild_settings[0][5] == "TRUE" else False
+        self.do_bruh_react = True if __rawguild_settings[0][6] == "TRUE" else False
     
     
     
@@ -113,5 +114,6 @@ class MikoGuild:
             'big_emojis': self.do_big_emojis,
             'greet_new_members': self.do_greet_new_members,
             'notify_member_leave': self.do_notify_member_leave,
-            'nickname_in_ctx': self.do_nickname_in_ctx
+            'nickname_in_ctx': self.do_nickname_in_ctx,
+            'bruh_react': self.do_bruh_react
         }

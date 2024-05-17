@@ -12,6 +12,7 @@ def all_guild_settings(mc) -> list:
         NickInCtx(mc),
         GreetNewMembers(mc),
         NotifyMemberLeave(mc),
+        BruhReact(mc),
     ]
 
 class BigEmojisGuild(Setting):
@@ -60,4 +61,16 @@ class NotifyMemberLeave(Setting):
             emoji = "✌",
             table = "GUILD_SETTINGS",
             col = "notify_member_leave"
+        )
+
+class BruhReact(Setting):
+
+    def __init__(self, mc):
+        super().__init__(
+            mc=mc,
+            name = "Bruh React",
+            desc = "React with 'B R U H' when certain words are mentioned in chat",
+            emoji = "🫱",
+            table = "GUILD_SETTINGS",
+            col = "bruh_react"
         )

@@ -4,8 +4,6 @@ Debug testing file
 
 
 
-import os
-
 from Database.MikoCore import MikoCore
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -15,16 +13,6 @@ class Tester(commands.Cog):
 
     @commands.command(name='test', aliases=['t'])
     async def tester(self, ctx: Context):
-        
-        # u = MikoMember(user=ctx.author, client=self.client)
-        # if (await u.profile).cmd_enabled('ROLL') != 1: return
-        # await u.increment_statistic('ROLL')
-        
-        # g = MikoGuild(guild=ctx.guild, client=self.client)
-        # await g.ainit()
-        
-        # u = MikoUser(user=ctx.author, client=self.client)
-        # await u.ainit()
         
         mc = MikoCore()
         await mc.user_ainit(user=ctx.author, client=self.client)
