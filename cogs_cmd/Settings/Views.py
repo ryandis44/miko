@@ -21,7 +21,7 @@ class SettingsView(discord.ui.View):
     @property
     def channel(self) -> discord.TextChannel:
         c = self.original_interaction.channel
-        if c.type in [discord.ChannelType.public_thread, discord.ChannelType.private_thread, discord.ChannelType.news_thread]:
+        if c.type in self.mc.threads:
             c = c.parent
 
         return c if self.scope['type'] == "CHANNEL_SETTINGS" else None
@@ -33,6 +33,10 @@ class SettingsView(discord.ui.View):
 
     async def ainit(self) -> None:
         self.msg = await self.original_interaction.original_response()
+        await self.mc.channel_ainit(
+            channel=self.original_interaction.channel if self.original_interaction.channel.type not in self.mc.threads else self.original_interaction.channel.parent,
+            client=self.original_interaction.client
+        )
         await self.main_page()
 
     async def on_timeout(self) -> None:
@@ -309,7 +313,8 @@ class BackToHome(discord.ui.Button):
             row=2
         )
     async def callback(self, interaction: discord.Interaction) -> None:
-        await interaction.response.edit_message()
+        try: await interaction.response.edit_message()
+        except: pass
         await self.view.main_page()
 
 # Responsible for handling moving back a page
