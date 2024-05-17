@@ -14,6 +14,7 @@ from Database.MikoTextChannel import MikoTextChannel
 from Database.MikoUser import MikoUser
 from Database.MySQL import AsyncDatabase
 from Database.tunables import tunables, PermissionProfile
+from discord.ext.commands import Bot
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 
@@ -40,18 +41,18 @@ class MikoCore:
     - Initialize MikoUser
     - If the user is a member, initialize MikoGuild
     '''
-    async def user_ainit(self, user: discord.User|discord.Member, client: discord.Client, check_exists: bool = True) -> MikoUser:
+    async def user_ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> MikoUser:
         await self.user.ainit(user=user, client=client, check_exists=check_exists)
         if self.user.is_member: self.guild: MikoGuild = self.user.guild
     
     
     
-    async def guild_ainit(self, guild: discord.Guild, client: discord.Client, check_exists: bool = True) -> MikoGuild:
+    async def guild_ainit(self, guild: discord.Guild, client: Bot, check_exists: bool = True) -> MikoGuild:
         await self.guild.ainit(guild=guild, client=client, check_exists=check_exists)
         
     
     
-    async def channel_ainit(self, channel: discord.TextChannel, client: discord.Client, check_exists: bool = True) -> MikoTextChannel:
+    async def channel_ainit(self, channel: discord.TextChannel, client: Bot, check_exists: bool = True) -> MikoTextChannel:
         await self.channel.ainit(channel=channel, client=client, check_exists=check_exists)
     
     
@@ -62,7 +63,7 @@ class MikoCore:
     - Initialize MikoUser (and MikoGuild, handled in user_ainit, if user is also a member)
     - Initialize MikoTextChannel (if user is a member)
     '''
-    async def message_ainit(self, message: discord.Message, client: discord.Client) -> None:
+    async def message_ainit(self, message: discord.Message, client: Bot) -> None:
         await self.message.ainit(message=message, client=client)
         await self.user_ainit(user=message.author, client=client)
         if self.user.is_member: await self.channel_ainit(channel=message.channel, client=client)

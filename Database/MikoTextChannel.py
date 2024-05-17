@@ -8,6 +8,7 @@ import discord
 import logging
 
 from Database.MySQL import AsyncDatabase
+from discord.ext.commands import Bot
 from misc.misc import sanitize_name
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
@@ -21,7 +22,7 @@ class MikoTextChannel:
     
     
     
-    async def ainit(self, channel: discord.TextChannel, client: discord.Client, check_exists: bool = True) -> None:
+    async def ainit(self, channel: discord.TextChannel, client: Bot, check_exists: bool = True) -> None:
         self.channel = channel
         self.client = client
         if check_exists: await self.__exists()

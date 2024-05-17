@@ -15,7 +15,7 @@ async def big_emojis(mc: MikoCore) -> bool:
     if (not mc.user.do_big_emojis or mc.message.message.author.bot) or \
         mc.message.message.channel.type in mc.threads: return False
     if len(mc.message.message.content.split()) == 1 and mc.message.message.author.id != mc.user.client.user.id:
-        if mc.message.message.content.startswith("<") and mc.message.message.content[1] not in ['@', '#']:
+        if mc.message.message.content.startswith("<") and mc.message.message.content[1] not in ['@', '#', '/']:
             try:
                 auth = None
                 if mc.message.message.reference is not None:

@@ -8,6 +8,7 @@ import discord
 import logging
 
 from Database.MySQL import AsyncDatabase
+from discord.ext.commands import Bot
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 
@@ -17,10 +18,10 @@ class MikoMessage:
     
     def __init__(self) -> None:
         self.message: discord.Message = None
-        self.client: discord.Client = None
+        self.client: Bot = None
     
     
     
-    async def ainit(self, message: discord.Message, client: discord.Client) -> None:
+    async def ainit(self, message: discord.Message, client: Bot) -> None:
         self.message = message
         self.client = client

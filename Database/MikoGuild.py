@@ -8,6 +8,7 @@ import discord
 import logging
 
 from Database.MySQL import AsyncDatabase
+from discord.ext.commands import Bot
 from misc.misc import sanitize_name
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
@@ -18,7 +19,7 @@ class MikoGuild:
     
     def __init__(self) -> None:
         self.guild: discord.Guild = None
-        self.client: discord.Client = None
+        self.client: Bot = None
         
         
         
@@ -26,7 +27,7 @@ class MikoGuild:
         
         
         
-    async def ainit(self, guild: discord.Guild, client: discord.Client, check_exists: bool = True) -> None:
+    async def ainit(self, guild: discord.Guild, client: Bot, check_exists: bool = True) -> None:
         self.guild = guild
         self.client = client
         if check_exists: await self.__exists()

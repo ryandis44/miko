@@ -10,6 +10,7 @@ import time
 
 from Database.MikoGuild import MikoGuild
 from Database.MySQL import AsyncDatabase
+from discord.ext.commands import Bot
 from misc.misc import sanitize_name
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
@@ -21,7 +22,7 @@ class MikoUser:
     def __init__(self) -> None:
         self.guild = MikoGuild()
         self.user: discord.User|discord.Member = None
-        self.client: discord.Client = None
+        self.client: Bot = None
         
         self.bot_permission_level: int = 0
         self.last_interaction: int = 0
@@ -33,7 +34,7 @@ class MikoUser:
         
         
         
-    async def ainit(self, user: discord.User|discord.Member, client: discord.Client, check_exists: bool = True) -> None:
+    async def ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> None:
         self.user = user
         self.client = client
         if check_exists: await self.__exists() # Member MUST be initialized first, due to the foreign key constraint on GUILDS.owner_id

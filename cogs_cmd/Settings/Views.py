@@ -305,7 +305,7 @@ class BackToHome(discord.ui.Button):
             style=discord.ButtonStyle.gray,
             label="Back",
             emoji=None,
-            custom_id="back_button",
+            custom_id="back_buttoncvxcvx",
             row=2
         )
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -320,7 +320,7 @@ class PrevButton(discord.ui.Button):
             style=discord.ButtonStyle.gray,
             label=None,
             emoji=self.mc.tunables('GENERIC_PREV_BUTTON'),
-            custom_id="prev_button",
+            custom_id="prev_buttondsfsfdfer342",
             row=2,
             disabled=disabled
         )
@@ -339,7 +339,7 @@ class NextButton(discord.ui.Button):
             style=discord.ButtonStyle.gray,
             label=None,
             emoji=self.mc.tunables('GENERIC_NEXT_BUTTON'),
-            custom_id="next_button",
+            custom_id="next_buttonsadfsf33",
             row=2,
             disabled=disabled
         )
