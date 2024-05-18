@@ -1,5 +1,7 @@
 '''
-Debug testing file
+Legacy Text Command
+
+Magic 8-Ball, 'm8b'
 '''
 
 import random

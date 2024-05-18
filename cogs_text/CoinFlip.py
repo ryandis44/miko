@@ -1,5 +1,7 @@
 '''
-Debug testing file
+Legacy Text Command
+
+Flip a coin, 'mflip'
 '''
 
 import random

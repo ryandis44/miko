@@ -1,5 +1,5 @@
 '''
-Debug testing file
+Debug testing file, refresh tunables from database
 '''
 
 import random
