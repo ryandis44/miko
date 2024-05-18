@@ -1,13 +1,27 @@
-import discord
-import collections
-from discord.utils import get
-from Database.tunables import *
+'''
+Legacy code. First "big" addition to Miko I worked on.
+Code has been slightly modified to work with application
+commands, but overall has the same original logic.
 
-def get_holiday(ctx, info_to_return):
-    holiday1 = get(ctx.guild.roles, id=895834307338326057)
-    holiday2 = get(ctx.guild.roles, id=895834403190759454)
-    holiday3 = get(ctx.guild.roles, id=895834443460280360)
-    holiday4 = get(ctx.guild.roles, id=895834487479476294)
+Responsible for deciding which role to add to a user and
+generating the embed showing all users with holiday roles
+(and those without)
+'''
+
+
+
+import collections
+import discord
+
+from Database.MikoCore import MikoCore
+from discord.utils import get
+
+def get_holiday(interaction: discord.Interaction, info_to_return: str):
+    mc = MikoCore()
+    holiday1 = get(interaction.guild.roles, id=895834307338326057)
+    holiday2 = get(interaction.guild.roles, id=895834403190759454)
+    holiday3 = get(interaction.guild.roles, id=895834443460280360)
+    holiday4 = get(interaction.guild.roles, id=895834487479476294)
 
     member_counts = [len(holiday1.members), len(holiday2.members), len(holiday3.members), len(holiday4.members)]
 
@@ -22,7 +36,7 @@ def get_holiday(ctx, info_to_return):
     if info_to_return == "EMBED":
 
         complete_holiday_members = holiday1.members + holiday2.members + holiday3.members + holiday4.members
-        all_members = ctx.guild.members
+        all_members = interaction.guild.members
 
         # For determining the contents of our embed description
         temp = []
@@ -96,11 +110,11 @@ def get_holiday(ctx, info_to_return):
 
         embed = discord.Embed (
             title = 'Holiday Role Assignment',
-            color = GLOBAL_EMBED_COLOR,
+            color = mc.tunables('GLOBAL_EMBED_COLOR'),
             description=f"{''.join(temp)}"
         )
         embed.set_footer(text=f"{''.join(temp2)}")
-        embed.set_thumbnail(url=ctx.guild.icon)
+        embed.set_thumbnail(url=interaction.guild.icon)
 
         return embed
     
