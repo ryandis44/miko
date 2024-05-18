@@ -87,7 +87,7 @@ class AnimeSearchView(discord.ui.View):
             f"> :chart_with_upwards_trend: **Popularity**: {int(data[index]['popularity']):,} fans\n"
             f"> :date: **Season Aired**: {data[index]['season']} {data[index]['seasonYear']}\n"
             f"> :telescope: **Genres**: {', '.join(data[index]['genres'])}\n"
-            f"> :1234: **Epiosdes**: {data[index]['episodes']}\n"
+            f"> :1234: **Episodes**: {data[index]['episodes']}\n"
             f"> :underage: **Adult Content**: {data[index]['isAdult']}\n"
         )
         
