@@ -15,4 +15,5 @@ async def caller(member: discord.Member, client) -> None:
     if not mc.tunables('EVENT_ENABLED_ON_MEMBER_JOIN'): return
     await mc.user_ainit(user=member, client=client)
     
+    # DOES NOT CURRENTLY ACCOUNT FOR BOT OUTAGES
     await role_assign(mc) # Assign roles to new members

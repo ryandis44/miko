@@ -71,3 +71,16 @@ class MikoTextChannel:
                 f"UPDATE TEXT_CHANNELS SET {', '.join(update_params)} WHERE channel_id='{self.channel.id}'"
             )
             LOGGER.debug(f"Updated {self.channel.name} in guild {self.channel.guild} in database")
+
+
+
+###########################################################################################################################
+
+
+
+    @property
+    def channel_settings(self) -> dict:
+        return {
+            'text_ai_mode': self.text_ai_mode,
+            'text_ai_threads': self.text_ai_threads
+        }

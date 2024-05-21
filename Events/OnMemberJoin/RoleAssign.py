@@ -12,12 +12,12 @@ from Database.MikoCore import MikoCore
 LOGGER = logging.getLogger()
 
 async def role_assign(mc: MikoCore) -> None:
-    if not mc.tunables('FEATURE_ENABLED_ROLE_ASSIGN') or mc.guild.role_assign_role is None: return
+    if not mc.tunables('FEATURE_ENABLED_ROLE_ASSIGN') or mc.guild.role_assign is None: return
     
-    try: await mc.user.user.add_roles(mc.guild.role_assign_role)
+    try: await mc.user.user.add_roles(mc.guild.role_assign)
     except Exception as e:
         LOGGER.error(f'Failed to assign joining role to user {mc.user.user} in guild {mc.guild.guild}, removing role from DB | {e}')
-        await mc.guild.set_role_assign_role(role_id=None)
+        await mc.guild.set_role_assign(role_id=None)
     
     
     

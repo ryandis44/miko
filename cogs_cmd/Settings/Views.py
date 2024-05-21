@@ -1,11 +1,13 @@
 import copy
 import discord
+import logging
 
 from cogs_cmd.Settings.ChannelSettings import all_channel_settings
 from cogs_cmd.Settings.GuildSettings import all_guild_settings
 from cogs_cmd.Settings.UserSettings import all_user_settings
 from cogs_cmd.Settings.settings import Setting
 from Database.MikoCore import MikoCore
+LOGGER = logging.getLogger()
 
 
 
@@ -31,12 +33,19 @@ class SettingsView(discord.ui.View):
         if self.channel is None: return None
         return self.channel.id
 
-    async def ainit(self) -> None:
-        self.msg = await self.original_interaction.original_response()
+
+
+    async def __channel_ainit(self) -> None:
         await self.mc.channel_ainit(
             channel=self.original_interaction.channel if self.original_interaction.channel.type not in self.mc.threads else self.original_interaction.channel.parent,
             client=self.original_interaction.client
         )
+
+
+
+    async def ainit(self) -> None:
+        self.msg = await self.original_interaction.original_response()
+        await self.__channel_ainit()
         await self.main_page()
 
     async def on_timeout(self) -> None:
@@ -113,7 +122,7 @@ class SettingsView(discord.ui.View):
                 f"{setting.emoji} "
                 f"`{setting.name}`: "
                 f"*{setting.desc}*"
-                f"{await setting.value_str(channel_id=self.channel_id)}"
+                f"{setting.value_str()}"
                 "\n"
             )
         
@@ -153,7 +162,7 @@ class SettingsView(discord.ui.View):
             f"*{s.desc}*{msg}"
             "\n\n"
             "**You currently have this setting set to**:\n"
-            f"{await s.value_str(channel_id=self.channel_id)}\n"
+            f"{s.value_str()}\n"
             "If you would like to change it, use the dropdown below."
         )
         
@@ -166,7 +175,8 @@ class SettingsView(discord.ui.View):
         # For setting default selected item to
         # item that is set by user
         
-        # ChatGPT and other permission-based options are enforced here
+        # ChatGPT and other permission-based options are enforced here.
+        # Enforces the use of ChatGPT 4.0 for users with permission level 3
         o = copy.deepcopy(s.options)
         permission_level = self.mc.user.bot_permission_level
         x = 0
@@ -174,6 +184,9 @@ class SettingsView(discord.ui.View):
         while True:
             if x >= options_len: break
             
+            # If the setting is a permission-based setting, enforce it here.
+            # If the user does not have the required permission level, remove
+            # the option from the list and start the loop over without that item
             if type(o[x][0]) == int:
                 if o[x][0] > permission_level:
                     del o[x]
@@ -181,7 +194,13 @@ class SettingsView(discord.ui.View):
                     x = 0
                     continue
             
-            val = await s.value(self.channel_id)
+            # val should always be bool, convert to string
+            #
+            # if the current option.value is equal to the
+            # current setting value, set it as the default
+            # (the option that is selected by default when
+            # the dropdown is generated)
+            val = s.value()
             if type(val) == bool:
                 if val: val = "TRUE"
                 else: val = "FALSE"
@@ -195,13 +214,45 @@ class SettingsView(discord.ui.View):
         
         self.clear_items()
         
-        self.add_item(ChooseState(setting=s))
+        
+        # If in guild settings, allow user to change setting for everyone
+        # if that setting returns a modifiable value of 3.
+        # Else, a value of 3 means the setting is not modifiable for
+        # user and channel settings
+        #
+        # This setting ONLY enforces whether the dropdown box is clickable
+        if s.table == "GUILD_SETTINGS":
+            if s.modifiable['val'] in [1, 3]: disabled = False
+            else: disabled = True
+        else:
+            if s.modifiable['val'] == 1: disabled = False
+            else: disabled = True
+        
+        # Deselect button toggleability:
+        if disabled: b_disabled = True
+        elif s.value() is None: b_disabled = True
+        else: b_disabled = False
+        
         self.add_item(BackToHome())
+        match s.t:
+            
+            case discord.ui.Select:
+                self.add_item(ChooseStateSelect(setting=s, disabled=disabled))
+            
+            case discord.ui.RoleSelect:
+                self.add_item(ChooseStateRoleSelect(setting=s, disabled=disabled))
+                self.add_item(DeselectButton(setting=s, disabled=b_disabled))
+            
+            case _:
+                LOGGER.critical(f"Unknown setting type: {s.t}")
+            
+            
         await self.msg.edit(content=None, view=self, embed=embed)
     
     async def setting_state_choice(self, interaction: discord.Interaction, s: Setting, choice) -> None:
         mc = MikoCore()
         await mc.user_ainit(user=interaction.user, client=interaction.client)
+        
         check = True
         match self.scope['type']:
             case "CHANNEL_SETTINGS":
@@ -214,8 +265,11 @@ class SettingsView(discord.ui.View):
         if not check:
             await interaction.response.send_message(content=msg, ephemeral=True)
             return
-    
-        await s.set_state(state=choice, channel_id=self.channel_id)
+        
+        await s.set_state(state=choice)
+        
+        await self.mc.user_ainit(user=interaction.user, client=interaction.client)
+        await self.__channel_ainit()
     
         self.clear_items()
         await self.setting_page(s=s)
@@ -256,6 +310,7 @@ class ChooseScope(discord.ui.Select):
 # Class responsible for listing individual settings
 class ChooseSetting(discord.ui.Select):
     def __init__(self, settings: list) -> None:
+        self.s = settings
         options = []
         for i, setting in enumerate(settings):
             setting: Setting
@@ -269,26 +324,13 @@ class ChooseSetting(discord.ui.Select):
         super().__init__(placeholder="Select a setting", max_values=1, min_values=1, options=options, row=1)
     
     async def callback(self, interaction: discord.Interaction) -> None:
-        setting = self.view.scope['data'][int(self.values[0])]
+        setting = self.view.scope['data'][int(self.values[0]) + self.view.offset]
         await interaction.response.edit_message()
         await self.view.setting_page(setting)
 
-class ChooseState(discord.ui.Select):
-    def __init__(self, setting: Setting) -> None:
+class ChooseStateSelect(discord.ui.Select):
+    def __init__(self, setting: Setting, disabled: bool) -> None:
         self.s = setting
-        
-        # If in guild settings, allow user to change setting for everyone
-        # if that setting returns a modifiable value of 3.
-        # Else, a value of 3 means the setting is not modifiable for
-        # user and channel settings
-        #
-        # This setting ONLY enforces whether the dropdown box is clickable
-        if setting.table == "GUILD_SETTINGS":
-            if setting.modifiable['val'] in [1, 3]: disabled = False
-            else: disabled = True
-        else:
-            if setting.modifiable['val'] == 1: disabled = False
-            else: disabled = True
             
         super().__init__(
             placeholder="Select an option",
@@ -298,17 +340,36 @@ class ChooseState(discord.ui.Select):
             row=1,
             disabled=disabled
         )
-    async def callback(self, interaction: discord.Integration) -> None:
+    async def callback(self, interaction: discord.Interaction) -> None:
         val = self.values[0]
         await self.view.setting_state_choice(interaction, self.s, val)
+
+
+
+class ChooseStateRoleSelect(discord.ui.RoleSelect):
+    def __init__(self, setting: Setting, disabled: bool) -> None:
+        self.s = setting
+        
+        super().__init__(
+            placeholder="Select a role",
+            max_values=1,
+            min_values=1,
+            row=1,
+            disabled=disabled
+        )
+    async def callback(self, interaction: discord.Interaction) -> None:
+        val = self.values[0].id
+        await self.view.setting_state_choice(interaction, self.s, val)
+
+
 
 # Simple back to home button
 class BackToHome(discord.ui.Button):
     def __init__(self):
         super().__init__(
             style=discord.ButtonStyle.gray,
-            label="Back",
-            emoji=None,
+            label=None,
+            emoji="🏠",
             custom_id="back_button",
             row=2
         )
@@ -316,6 +377,25 @@ class BackToHome(discord.ui.Button):
         try: await interaction.response.edit_message()
         except: pass
         await self.view.main_page()
+
+
+
+# For settings with more than true/false options
+class DeselectButton(discord.ui.Button):
+    def __init__(self, setting: Setting, disabled: bool):
+        self.s = setting
+        super().__init__(
+            style=discord.ButtonStyle.red,
+            label="Deselect",
+            emoji=None,
+            custom_id="deselect_button",
+            row=2,
+            disabled=disabled
+        )
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await self.view.setting_state_choice(interaction, self.s, None)
+
+
 
 # Responsible for handling moving back a page
 class PrevButton(discord.ui.Button):

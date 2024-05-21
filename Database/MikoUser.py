@@ -149,6 +149,16 @@ class MikoUser:
 
 
     @property
+    def user_settings(self) -> dict:
+        return {
+            'big_emojis': self.do_big_emojis,
+            'track_playtime': self.do_track_playtime,
+            'track_voicetime': self.do_track_voicetime
+        }
+    
+    
+    
+    @property
     def is_member(self) -> bool: return isinstance(self.user, discord.Member)
 
 

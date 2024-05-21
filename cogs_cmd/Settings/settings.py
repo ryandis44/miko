@@ -19,7 +19,8 @@ class Setting:
         emoji: str,
         table: str,
         col: str,
-        options: list[int, discord.SelectOption] = None
+        options: list[int, discord.SelectOption] = None,
+        t: list[discord.ui.Select, discord.ui.RoleSelect, discord.ui.ChannelSelect, discord.ui.UserSelect] = discord.ui.Select
     ) -> None:
 
         self.mc = mc
@@ -28,6 +29,7 @@ class Setting:
         self.emoji = emoji
         self.table = table
         self.col = col
+        self.t = t
         self.permission_level = 1
         self.modifiable = mc.profile.feature_enabled(f'{col.upper()}')
         self.modifiable = {
@@ -73,30 +75,39 @@ class Setting:
 
 
 
-    async def value(self, channel_id=None):
+    def value(self) -> bool|str|int|None:
         match self.table:
-            case 'CHANNEL_SETTINGS': scope = f"channel_id='{channel_id}'"
-            case 'GUILD_SETTINGS': scope = f"guild_id='{self.mc.guild.guild.id}'"
-            case _: scope = f"user_id='{self.mc.user.user.id}'"
+            case 'CHANNEL_SETTINGS': val = self.mc.channel.channel_settings[self.col]
+            case 'GUILD_SETTINGS': val = self.mc.guild.guild_settings[self.col]
+            case _: val = self.mc.user.user_settings[self.col]
             
-        val = await db.execute(
-            f"SELECT {self.col} FROM {self.table} WHERE "
-            f"{scope} LIMIT 1"
-        )
-        if val == "FALSE": return False
-        elif val == "TRUE": return True
         return val
+        
+        
+        
+        
+        # match self.table:
+        #     case 'CHANNEL_SETTINGS': scope = f"channel_id='{channel_id}'"
+        #     case 'GUILD_SETTINGS': scope = f"guild_id='{self.mc.guild.guild.id}'"
+        #     case _: scope = f"user_id='{self.mc.user.user.id}'"
+            
+        # val = await db.execute(
+        #     f"SELECT {self.col} FROM {self.table} WHERE "
+        #     f"{scope} LIMIT 1"
+        # )
+        # if val == "FALSE": return False
+        # elif val == "TRUE": return True
+        # return val
     
     
     
-    async def value_str(self, channel_id=None):
-        val = await self.value(channel_id=channel_id)
+    def value_str(self):
+        val = self.value()
         if type(val) == bool:
             if val: state = "+ ENABLED +"
             else: state = "- DISABLED -"
         else:
-            val = val.upper()
-            if val == "DISABLED": state = "- DISABLED -"
+            if val is None: state = "- DISABLED -"
             else: state = f"+ {val} +"
         
         reason = ""
@@ -118,19 +129,22 @@ class Setting:
     
     
 
-    async def set_state(self, state=None, channel_id=None) -> str:
-        val = await self.value(channel_id=channel_id)
+    async def set_state(self, state=None) -> str:
+        # val = self.value()
         
         match self.table:
-            case 'CHANNEL_SETTINGS': scope = f"channel_id='{channel_id}'"
+            case 'CHANNEL_SETTINGS': scope = f"channel_id='{self.mc.channel.channel.id}'"
             case 'GUILD_SETTINGS': scope = f"guild_id='{self.mc.guild.guild.id}'"
             case _: scope = f"user_id='{self.mc.user.user.id}'"
         
         # If state is None, then val must be bool. Set to opposite.
-        if state is None: state = 'TRUE' if val else 'FALSE'
+        # Depreciated, possibly
+        # if state is None: state = 'TRUE' if val else 'FALSE'
         
+        if state is None: state_str = 'NULL'
+        else: state_str = f"'{state}'"
         await db.execute(
-            f"UPDATE {self.table} SET {self.col}='{state}' WHERE "
+            f"UPDATE {self.table} SET {self.col}={state_str} WHERE "
             f"{scope}"
         )
         return state

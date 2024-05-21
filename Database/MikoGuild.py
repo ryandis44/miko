@@ -66,7 +66,7 @@ class MikoGuild:
         # request settings only once.
         __db_string = (
             "SELECT ymca_green_book_announce_channel,music_channel,big_emojis,greet_new_members,notify_member_leave,"
-            "nickname_in_ctx,bruh_react,role_assign_role "
+            "nickname_in_ctx,bruh_react,role_assign "
             f"FROM GUILD_SETTINGS WHERE guild_id='{self.guild.id}'"
         )
         __rawguild_settings = await db.execute(__db_string)
@@ -85,7 +85,7 @@ class MikoGuild:
         self.do_notify_member_leave = True if __rawguild_settings[0][4] == "TRUE" else False
         self.do_nickname_in_ctx = True if __rawguild_settings[0][5] == "TRUE" else False
         self.do_bruh_react = True if __rawguild_settings[0][6] == "TRUE" else False
-        self.role_assign_role = None if __rawguild_settings[0][7] is None else self.guild.get_role(int(__rawguild_settings[0][7]))
+        self.role_assign = None if __rawguild_settings[0][7] is None else self.guild.get_role(int(__rawguild_settings[0][7]))
     
     
     
@@ -117,14 +117,14 @@ class MikoGuild:
             'notify_member_leave': self.do_notify_member_leave,
             'nickname_in_ctx': self.do_nickname_in_ctx,
             'bruh_react': self.do_bruh_react,
-            'role_assign_role': self.role_assign_role
+            'role_assign': self.role_assign
         }
     
     
     
-    async def set_role_assign_role(self, role_id: int = None) -> None:
-        if role_id is not None: __str = f"role_assign_role='{role_id}'"
-        else: __str = "role_assign_role=NULL"
+    async def set_role_assign(self, role_id: int = None) -> None:
+        if role_id is not None: __str = f"role_assign='{role_id}'"
+        else: __str = "role_assign=NULL"
         await db.execute(
             f"UPDATE GUILD_SETTINGS SET {__str} WHERE guild_id='{self.guild.id}'"
         )

@@ -4,15 +4,18 @@
 
 
 
+import discord
+
 from cogs_cmd.Settings.settings import Setting
 
 def all_guild_settings(mc) -> list:
     return [
+        BruhReact(mc),
+        RoleAssignRole(mc),
         BigEmojisGuild(mc),
-        NickInCtx(mc),
         GreetNewMembers(mc),
         NotifyMemberLeave(mc),
-        BruhReact(mc),
+        NickInCtx(mc),
     ]
 
 class BigEmojisGuild(Setting):
@@ -73,4 +76,17 @@ class BruhReact(Setting):
             emoji = "🫱",
             table = "GUILD_SETTINGS",
             col = "bruh_react"
+        )
+
+class RoleAssignRole(Setting):
+
+    def __init__(self, mc):
+        super().__init__(
+            mc=mc,
+            name = "Member Join Role",
+            desc = "Optionally assign members a role when they join the server",
+            emoji = "🏷️",
+            table = "GUILD_SETTINGS",
+            col = "role_assign",
+            t = discord.ui.RoleSelect
         )
