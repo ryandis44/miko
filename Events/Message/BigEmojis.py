@@ -11,7 +11,7 @@ from Database.MikoCore import MikoCore
 from misc.misc import sanitize_name
 
 async def big_emojis(mc: MikoCore) -> bool:
-    if not mc.tunables('FEATURE_ENABLED_BIG_EMOJIS'): return False
+    if not mc.profile.feature_enabled('BIG_EMOJIS'): return False
     if (not mc.user.do_big_emojis or mc.message.message.author.bot) or \
         mc.message.message.channel.type in mc.threads: return False
     if len(mc.message.message.content.split()) == 1 and mc.message.message.author.id != mc.user.client.user.id:

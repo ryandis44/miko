@@ -12,7 +12,7 @@ from Database.MikoCore import MikoCore
 LOGGER = logging.getLogger()
 
 async def role_assign(mc: MikoCore) -> None:
-    if not mc.tunables('FEATURE_ENABLED_ROLE_ASSIGN') or mc.guild.role_assign is None: return
+    if not mc.profile.feature_enabled('ROLE_ASSIGN') or mc.guild.role_assign is None: return
     
     try: await mc.user.user.add_roles(mc.guild.role_assign)
     except Exception as e:

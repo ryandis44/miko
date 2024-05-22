@@ -14,9 +14,10 @@ from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
 from Database.MySQL import connect_pool # connect to the database
 from Database.tunables import tunables_init, tunables # tunables used by the bot
+from Events.MemberJoin.Core import caller as on_member_join_caller # core member join event handler
 from Events.Message.Core import caller as on_message_caller # core message event handler
-from Events.OnMemberJoin.Core import caller as on_member_join_caller # core member join event handler
 from Events.Presence.Core import caller as on_presence_update_caller # core presence event handler
+from Events.RawMemberRemove.Core import caller as on_raw_member_remove_caller # core raw member remove event handler
 
 
 
@@ -104,6 +105,13 @@ async def on_presence_update(previous, current):
 async def on_member_join(member):
     try: await on_member_join_caller(member, client)
     except Exception as e: LOGGER.error(f"Error in on_member_join: {e}")
+
+
+
+@client.event
+async def on_raw_member_remove(payload):
+    try: await on_raw_member_remove_caller(payload, client)
+    except Exception as e: LOGGER.error(f"Error in on_raw_member_remove: {e}")
 
 
 
