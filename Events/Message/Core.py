@@ -16,10 +16,8 @@ LOGGER = logging.getLogger()
 
 async def caller(message: discord.Message, client: Bot) -> None:
     
-    # temp to see if DMs are causing issues
-    if message.guild is None:
-        LOGGER.critical(f"Message received in DMs: {message.author.id} - {message.author.name} - {message.content}")
-        return
+    # ephemeral messages and DMs are not processed
+    if message.guild is None: return
     
     mc = MikoCore()
     if mc.tunables('PROCESS_TEXT_COMMANDS'): await client.process_commands(message) # discord.py function for handling all text commands
