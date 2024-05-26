@@ -46,6 +46,8 @@ class MikoUser:
     update the user in the database
     '''
     async def __exists(self) -> None:
+        
+        # User table processing
         __rawuser = await db.execute(
             f"SELECT perm_level,last_interaction,username "
             f"FROM USERS WHERE user_id='{self.user.id}'"
@@ -67,8 +69,39 @@ class MikoUser:
             
             await self.__update_database(__rawuser)
 
-        if self.is_member: await self.guild.ainit(guild=self.user.guild, client=self.client)
+        ################################################################################################################
+
+        # Guild member table processing
+        if self.is_member:
+            await self.guild.ainit(guild=self.user.guild, client=self.client)
+            
+            __guild_member_str = (
+                "SELECT first_join, latest_join "
+                f"FROM GUILD_MEMBERS WHERE user_id='{self.user.id}' AND guild_id='{self.guild.guild.id}'"
+            )
+            
+            __guild_member = await db.execute(__guild_member_str)
+            
+            if __guild_member == [] or __guild_member is None:
+                await db.execute(
+                    "INSERT INTO GUILD_MEMBERS (user_id, guild_id, first_join, latest_join) VALUES "
+                    f"('{self.user.id}', '{self.guild.guild.id}', '{int(self.user.joined_at.timestamp())}', '{int(self.user.joined_at.timestamp())}')"
+                )
+                LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to guild members {self.guild.guild.name} ({self.guild.guild.id}) in database.")
+                __guild_member = await db.execute(__guild_member_str)
+            
+            elif int(self.user.joined_at.timestamp()) != __guild_member[0][1]:
+                await db.execute(
+                    f"UPDATE GUILD_MEMBERS SET latest_join='{int(self.user.joined_at.timestamp())}' "
+                    f"WHERE user_id='{self.user.id}' AND guild_id='{self.guild.guild.id}'"
+                )
+            
+            self.first_join = __guild_member[0][0]
+            self.latest_join = int(self.user.joined_at.timestamp())
+            
+        ################################################################################################################
         
+        # User settings table processing
         __db_string = (
             "SELECT big_emojis,track_playtime,track_voicetime "
             f"FROM USER_SETTINGS WHERE user_id='{self.user.id}'"
