@@ -87,7 +87,7 @@ class MikoUser:
                     "INSERT INTO GUILD_MEMBERS (user_id, guild_id, first_join, latest_join) VALUES "
                     f"('{self.user.id}', '{self.guild.guild.id}', '{int(self.user.joined_at.timestamp())}', '{int(self.user.joined_at.timestamp())}')"
                 )
-                LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to guild members {self.guild.guild.name} ({self.guild.guild.id}) in database.")
+                LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to guild members for guild {self.guild.guild.name} ({self.guild.guild.id}) in database.")
                 __guild_member = await db.execute(__guild_member_str)
             
             elif int(self.user.joined_at.timestamp()) != __guild_member[0][1]:
@@ -98,6 +98,14 @@ class MikoUser:
             
             self.first_join = __guild_member[0][0]
             self.latest_join = int(self.user.joined_at.timestamp())
+            
+            # Obtain generated user metadata
+            __guild_member_meta = await db.execute(
+                "SELECT member_number,user_id "
+                f"FROM GENERATED_USER_META WHERE user_id='{self.user.id}' AND guild_id='{self.guild.guild.id}'"
+            )
+            
+            self.member_number = __guild_member_meta[0][0] if __guild_member_meta != [] else None
             
         ################################################################################################################
         

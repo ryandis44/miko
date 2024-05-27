@@ -28,6 +28,7 @@ class Tester(commands.Cog):
             f"{mc.profile.feature_enabled('BIG_EMOJIS')}\n"
             f"{mc.user.client.guilds}\n"
             f"{mc.profile.cmd_enabled('ANIME_SEARCH')}\n"
+            f"Unique member number: {mc.user.member_number}\n"
         )
 
 async def setup(client: commands.Bot):
