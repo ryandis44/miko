@@ -92,6 +92,7 @@ class MikoUser:
                 )
                 LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to guild members for guild {self.guild.guild.name} ({self.guild.guild.id}) in database.")
                 __guild_member = await db.execute(__guild_member_str)
+                self.new_user = True
             
             elif int(self.user.joined_at.timestamp()) != __guild_member[0][1]:
                 await db.execute(
@@ -110,16 +111,17 @@ class MikoUser:
             )
             __guild_member_meta = await db.execute(__guild_member_meta_str)
             
-            if __guild_member_meta[0][0] is None:
+            if __guild_member_meta is None or __guild_member_meta == []:
                 __num = await db.execute(
                     "SELECT member_number FROM GENERATED_USER_META WHERE "
                     f"guild_id='{self.guild.guild.id}' ORDER BY member_number DESC LIMIT 1"
                 )
-                self.member_number = __num + 1
                 await db.execute(
                     "INSERT INTO GENERATED_USER_META (member_number, user_id, guild_id) VALUES "
-                    f"('{self.member_number}', '{self.user.id}', '{self.guild.guild.id}')"
+                    f"('{__num + 1}', '{self.user.id}', '{self.guild.guild.id}')"
                 )
+                __guild_member_meta = await db.execute(__guild_member_meta_str)
+                self.new_user = True
             
             
             self.member_number = __guild_member_meta[0][0] if __guild_member_meta != [] else None

@@ -20,7 +20,22 @@ from discord.ext.commands import Bot
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 
+USER_LOCKS = {}
 
+# Temporary lock, will replace with redis implementation soon
+async def presence_lock(user: discord.Member) -> asyncio.Lock:
+    val = USER_LOCKS.get(user.id)
+    
+    if val is None:
+        lock = asyncio.Lock()
+        USER_LOCKS[user.id] = {
+            'at': int(time.time()),
+            'lock': lock
+        }
+        return lock
+    
+    val['at'] = int(time.time())
+    return val['lock']
 
 class MikoCore:
     
@@ -44,11 +59,12 @@ class MikoCore:
     - If the user is a member, initialize MikoGuild
     '''
     async def user_ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> MikoUser:
-        await self.user.ainit(user=user, client=client, check_exists=check_exists)
-        if self.user.is_member: self.guild: MikoGuild = self.user.guild
-        if self.user.new_user:
-            await self.__role_assign()
-            await self.__greet_new_members()
+        async with await presence_lock(user):
+            await self.user.ainit(user=user, client=client, check_exists=check_exists)
+            if self.user.is_member: self.guild: MikoGuild = self.user.guild
+            if self.user.new_user:
+                await self.__role_assign()
+                await self.__greet_new_members()
     
     
     
@@ -109,30 +125,35 @@ class MikoCore:
             await self.guild.set_role_assign(role_id=None)
         
         
-        
-        # The boys server custom implementation
-        if self.guild.profile_text != "THEBOYS": return
-        
-        holiday_role = self.guild.guild.get_role(get_holiday(self.user.user, "ROLE", self))
-        await self.user.user.add_roles(holiday_role)
-        
-        if self.user.user.bot:
-            bot = self.guild.guild.get_role(890642126445084702)
-            await self.user.user.add_roles(bot)
+        try: 
+            # The boys server custom implementation
+            if self.guild.profile_text != "THEBOYS": return
+            
+            holiday_role = self.guild.guild.get_role(get_holiday(self.user.user, "ROLE", self))
+            await self.user.user.add_roles(holiday_role)
+            
+            if self.user.user.bot:
+                bot = self.guild.guild.get_role(890642126445084702)
+                await self.user.user.add_roles(bot)
+        except Exception as e:
+            LOGGER.error(f'Failed to run the boys server role implementation | {e}')
     
     
     
     async def __greet_new_members(self) -> None:
         if self.profile.feature_enabled('GREET_NEW_MEMBERS') != 1: return
         
-        channel = self.guild.guild.system_channel
-        if channel is None or not channel.permissions_for(self.guild.guild.me).send_messages: return
-        
-        await asyncio.sleep(1) # ensure welcome message is sent after (discord) system join message
-        
-        new = self.user.first_join == self.user.latest_join
-        
-        await channel.send(
-            f'Hi {self.user.user.mention}, welcome{" BACK " if not new else " "}to {self.guild.guild.name}! :tada:\n'
-            f'> You are unique member `#{self.user.member_number}`', silent=True
-        )
+        try:
+            channel = self.guild.guild.system_channel
+            if channel is None or not channel.permissions_for(self.guild.guild.me).send_messages: return
+            
+            await asyncio.sleep(1) # ensure welcome message is sent after (discord) system join message
+            
+            new = self.user.first_join == self.user.latest_join
+            
+            await channel.send(
+                f'Hi {self.user.user.mention}, welcome{" BACK " if not new else " "}to {self.guild.guild.name}! :tada:\n'
+                f'> You are unique member `#{self.user.member_number}`', silent=True
+            )
+        except Exception as e:
+            LOGGER.error(f'Failed to greet new member {self.user.user} in guild {self.guild.guild} | {e}')
