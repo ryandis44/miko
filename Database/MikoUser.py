@@ -116,6 +116,7 @@ class MikoUser:
                     "SELECT member_number FROM GENERATED_USER_META WHERE "
                     f"guild_id='{self.guild.guild.id}' ORDER BY member_number DESC LIMIT 1"
                 )
+                if __num == [] or __num is None: __num = 0
                 await db.execute(
                     "INSERT INTO GENERATED_USER_META (member_number, user_id, guild_id) VALUES "
                     f"('{__num + 1}', '{self.user.id}', '{self.guild.guild.id}')"
