@@ -119,7 +119,7 @@ class MikoCore:
     async def __role_assign(self) -> None:
         if self.profile.feature_enabled('ROLE_ASSIGN') != 1 or self.guild.role_assign is None: return
         
-        try: await self.user.user.add_roles(self.guild.role_assign)
+        try: await self.user.user.add_roles(self.guild.role_assign, reason="Member Join Role enabled. /settings to disable")
         except Exception as e:
             LOGGER.error(f'Failed to assign joining role to user {self.user.user} in guild {self.guild.guild}, removing role from DB | {e}')
             await self.guild.set_role_assign(role_id=None)
@@ -130,11 +130,11 @@ class MikoCore:
             if self.guild.profile_text != "THEBOYS": return
             
             holiday_role = self.guild.guild.get_role(get_holiday(self.user.user, "ROLE", self))
-            await self.user.user.add_roles(holiday_role)
+            await self.user.user.add_roles(holiday_role, reason="The Boys Hangout custom implementation")
             
             if self.user.user.bot:
                 bot = self.guild.guild.get_role(890642126445084702)
-                await self.user.user.add_roles(bot)
+                await self.user.user.add_roles(bot, reason="The Boys Hangout custom implementation")
         except Exception as e:
             LOGGER.error(f'Failed to run the boys server role implementation | {e}')
     

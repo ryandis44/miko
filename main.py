@@ -8,11 +8,13 @@ import discord
 import logging # used for logging messages to the console and log file
 import os # used for exiting the program without error messages
 import signal # used for handling shutdown signals (ctrl+c)
+import wavelink
 
+from cogs_cmd_on_ready.MusicPlayer.WavelinkSetup import wavelink_setup # setup wavelink for music player
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
-from Database.MySQL import connect_pool # connect to the database
+from Database.MySQL import connect_pool, VPN_IP # connect to the database
 from Database.tunables import tunables_init, tunables # tunables used by the bot
 from Events.MemberJoin.Core import caller as on_member_join_caller # core member join event handler
 from Events.Message.Core import caller as on_message_caller # core message event handler
@@ -46,12 +48,24 @@ load_dotenv() # load environment variables from .env file
 
 
 '''
-Define bot intents. These are used to determine what events the bot will receive.
+Create bot class and define bot intents. These are used to determine what events the bot will receive.
 '''
+class Bot(commands.Bot):
+    def __init__(self) -> None:
+        intents: discord.Intents = discord.Intents.all()
+        super().__init__(command_prefix=tunables("COMMAND_PREFIX"), intents=intents, case_insensitive=True, help_command=None)
+    
+    async def setup_hook(self) -> None:
+        nodes = [wavelink.Node(
+            uri=f"http://{VPN_IP}:2333",
+            password=tunables('WAVELINK_PASSWORD'),
+        )]
+        
+        await wavelink.Pool.connect(nodes=nodes, client=client, cache_capacity=None)
+    
+    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None: print("Wavelink ready")
 
-intents = discord.Intents.all()
-client = discord.Client(intents=intents)
-client = commands.Bot(command_prefix=tunables("COMMAND_PREFIX"), intents=intents, case_insensitive=True, help_command=None)
+client = Bot()
 console = Console(client=client)
 
 
@@ -146,6 +160,17 @@ async def load_cogs_cmd():
             except Exception as e:
                 LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All cmd cogs loaded.')
+    
+async def load_cogs_cmd_on_ready():
+    for dir in os.listdir('./cogs_cmd_on_ready'):
+        for filename in os.listdir(f'./cogs_cmd_on_ready/{dir}'):
+            try:
+                if filename != 'cog.py': continue
+                await client.load_extension(f'cogs_cmd_on_ready.{dir}.{filename[:-3]}')
+                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog on ready: {dir}/{filename[:-3]}')
+            except Exception as e:
+                LOGGER.error(f'Failed to load cmd cog on ready: {filename[:-3]} | {e}')   
+    LOGGER.log(level=logging.DEBUG, msg='All cmd cogs on ready loaded.')
 
 async def load_cogs_console():
     for filename in os.listdir('./cogs_console'):
@@ -181,5 +206,6 @@ async def on_ready() -> None:
     LOGGER.log(level=logging.INFO, msg=f'Logged in as {client.user} {client.user.id}')
     print('bot online') # for pterodactyl console for online status
     await client.change_presence(activity=discord.Game(name=tunables("ACTIVITY_STATUS")))
+    await load_cogs_cmd_on_ready()
 
 asyncio.run(main())
