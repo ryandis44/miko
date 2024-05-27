@@ -13,11 +13,9 @@ generating the embed showing all users with holiday roles
 import collections
 import discord
 
-from Database.MikoCore import MikoCore
 from discord.utils import get
 
-def get_holiday(interaction: discord.Interaction, info_to_return: str):
-    mc = MikoCore()
+def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
     holiday1 = get(interaction.guild.roles, id=895834307338326057)
     holiday2 = get(interaction.guild.roles, id=895834403190759454)
     holiday3 = get(interaction.guild.roles, id=895834443460280360)

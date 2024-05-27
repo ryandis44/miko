@@ -4,10 +4,12 @@ This class is responsible for handling all user data
 
 
 
+import asyncio
 import discord
 import logging
 import time
 
+from cogs_cmd.HolidayRoles.holiday_roles import get_holiday
 from Database.MikoGuild import MikoGuild
 from Database.MikoMessage import MikoMessage
 from Database.MikoTextChannel import MikoTextChannel
@@ -44,6 +46,9 @@ class MikoCore:
     async def user_ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> MikoUser:
         await self.user.ainit(user=user, client=client, check_exists=check_exists)
         if self.user.is_member: self.guild: MikoGuild = self.user.guild
+        if self.user.new_user:
+            await self.__role_assign()
+            await self.__greet_new_members()
     
     
     
@@ -70,6 +75,10 @@ class MikoCore:
     
     
     
+###########################################################################################################################    
+    
+    
+    
     # To reduce imports from multiple files, this function is used to access
     # tunables in files that already access MikoCore
     def tunables(self, key: str) -> str: return tunables(key)
@@ -88,3 +97,42 @@ class MikoCore:
         else:
             LOGGER.warning(f"Guild profile '{self.guild.profile_text}' for guild {self.guild.guild.name} ({self.guild.guild.id}) not found. Using default 'ACTIVE' profile")
             return self.tunables('PERMS_PROFILE_ACTIVE')
+    
+    
+    
+    async def __role_assign(self) -> None:
+        if self.profile.feature_enabled('ROLE_ASSIGN') != 1 or self.guild.role_assign is None: return
+        
+        try: await self.user.user.add_roles(self.guild.role_assign)
+        except Exception as e:
+            LOGGER.error(f'Failed to assign joining role to user {self.user.user} in guild {self.guild.guild}, removing role from DB | {e}')
+            await self.guild.set_role_assign(role_id=None)
+        
+        
+        
+        # The boys server custom implementation
+        if self.guild.profile_text != "THEBOYS": return
+        
+        holiday_role = self.guild.guild.get_role(get_holiday(self.user.user, "ROLE", self))
+        await self.user.user.add_roles(holiday_role)
+        
+        if self.user.user.bot:
+            bot = self.guild.guild.get_role(890642126445084702)
+            await self.user.user.add_roles(bot)
+    
+    
+    
+    async def __greet_new_members(self) -> None:
+        if self.profile.feature_enabled('GREET_NEW_MEMBERS') != 1: return
+        
+        channel = self.guild.guild.system_channel
+        if channel is None or not channel.permissions_for(self.guild.guild.me).send_messages: return
+        
+        await asyncio.sleep(1) # ensure welcome message is sent after (discord) system join message
+        
+        new = self.user.first_join == self.user.latest_join
+        
+        await channel.send(
+            f'Hi {self.user.user.mention}, welcome{" BACK " if not new else " "}to {self.guild.guild.name}! :tada:\n'
+            f'> You are unique member `#{self.user.member_number}`', silent=True
+        )

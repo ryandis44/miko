@@ -28,6 +28,8 @@ class MikoUser:
         self.last_interaction: int = 0
         self.usernames: list = []
         
+        self.new_user: bool = False
+        
         
         
     def __str__(self) -> str: return f"MikoUser | {self.user.name}"
@@ -62,6 +64,7 @@ class MikoUser:
                 f"('{self.user.id}', '{sanitize_name(self.user.name)}', '{str(1) if self.user.bot else str(0)}', '{self.last_interaction}')"
             )
             LOGGER.info(f"Added user {self.user.name} ({self.user.id}) to database.")
+            self.new_user = True
             
         else:
             self.bot_permission_level: int = __rawuser[0][0]
@@ -95,6 +98,7 @@ class MikoUser:
                     f"UPDATE GUILD_MEMBERS SET latest_join='{int(self.user.joined_at.timestamp())}' "
                     f"WHERE user_id='{self.user.id}' AND guild_id='{self.guild.guild.id}'"
                 )
+                self.new_user = True
             
             self.first_join = __guild_member[0][0]
             self.latest_join = int(self.user.joined_at.timestamp())
