@@ -104,10 +104,23 @@ class MikoUser:
             self.latest_join = int(self.user.joined_at.timestamp())
             
             # Obtain generated user metadata
-            __guild_member_meta = await db.execute(
+            __guild_member_meta_str = (
                 "SELECT member_number,user_id "
                 f"FROM GENERATED_USER_META WHERE user_id='{self.user.id}' AND guild_id='{self.guild.guild.id}'"
             )
+            __guild_member_meta = await db.execute(__guild_member_meta_str)
+            
+            if __guild_member_meta[0][0] is None:
+                __num = await db.execute(
+                    "SELECT member_number FROM GENERATED_USER_META WHERE "
+                    f"guild_id='{self.guild.guild.id}' ORDER BY member_number DESC LIMIT 1"
+                )
+                self.member_number = __num + 1
+                await db.execute(
+                    "INSERT INTO GENERATED_USER_META (member_number, user_id, guild_id) VALUES "
+                    f"('{self.member_number}', '{self.user.id}', '{self.guild.guild.id}')"
+                )
+            
             
             self.member_number = __guild_member_meta[0][0] if __guild_member_meta != [] else None
             

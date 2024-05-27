@@ -243,6 +243,10 @@ class SettingsView(discord.ui.View):
                 self.add_item(ChooseStateRoleSelect(setting=s, disabled=disabled))
                 self.add_item(DeselectButton(setting=s, disabled=b_disabled))
             
+            case discord.ui.ChannelSelect:
+                self.add_item(ChooseStateChannelSelect(setting=s, disabled=disabled))
+                self.add_item(DeselectButton(setting=s, disabled=b_disabled))
+            
             case _:
                 LOGGER.critical(f"Unknown setting type: {s.t}")
             
@@ -356,6 +360,24 @@ class ChooseStateRoleSelect(discord.ui.RoleSelect):
             min_values=1,
             row=1,
             disabled=disabled
+        )
+    async def callback(self, interaction: discord.Interaction) -> None:
+        val = self.values[0].id
+        await self.view.setting_state_choice(interaction, self.s, val)
+
+
+
+class ChooseStateChannelSelect(discord.ui.ChannelSelect):
+    def __init__(self, setting: Setting, disabled: bool) -> None:
+        self.s = setting
+        
+        super().__init__(
+            placeholder="Select a channel",
+            max_values=1,
+            min_values=1,
+            row=1,
+            disabled=disabled,
+            channel_types=[discord.ChannelType.text]
         )
     async def callback(self, interaction: discord.Interaction) -> None:
         val = self.values[0].id

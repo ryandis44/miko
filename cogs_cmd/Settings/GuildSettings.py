@@ -12,6 +12,7 @@ def all_guild_settings(mc) -> list:
     return [
         BruhReact(mc),
         RoleAssignRole(mc),
+        MusicChannel(mc),
         BigEmojisGuild(mc),
         GreetNewMembers(mc),
         NotifyMemberLeave(mc),
@@ -89,4 +90,17 @@ class RoleAssignRole(Setting):
             table = "GUILD_SETTINGS",
             col = "role_assign",
             t = discord.ui.RoleSelect
+        )
+
+class MusicChannel(Setting):
+
+    def __init__(self, mc):
+        super().__init__(
+            mc=mc,
+            name = "Music Channel",
+            desc = "Required to use music features. Set a channel for music updates and commands",
+            emoji = "🎵",
+            table = "GUILD_SETTINGS",
+            col = "music_channel",
+            t = discord.ui.ChannelSelect
         )
