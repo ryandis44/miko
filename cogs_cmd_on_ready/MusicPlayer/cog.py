@@ -64,7 +64,7 @@ class MusicPlayer(commands.Cog):
                 player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
             except Exception as e: print(e)
         
-        player.autoplay = wavelink.AutoPlayMode.enabled
+        player.autoplay = wavelink.AutoPlayMode.disabled
         
         
         # Lock player to this channel
@@ -81,7 +81,25 @@ class MusicPlayer(commands.Cog):
         
         tracks: wavelink.Search = await wavelink.Playable.search(search)
         
-        # TODO
+        if not tracks:
+            await msg.edit(content=f"No tracks found for search: {search}")
+            await asyncio.sleep(mc.tunables('QUICK_EPHEMERAL_DELETE_AFTER'))
+            try: await msg.delete() # declutter
+            except: pass
+        
+        else:
+            track: wavelink.Playable = tracks[0]
+            await player.queue.put_wait(track)
+            await msg.edit(content=f"Added {track} {track.artist} to the queue.")
+        
+        if not player.playing:
+            await player.play(player.queue.get(), volume=30)
+        
+        try:
+            await asyncio.sleep(mc.tunables('QUICK_EPHEMERAL_DELETE_AFTER'))
+            await msg.delete() # declutter
+        except: pass
+        
 
 
 
