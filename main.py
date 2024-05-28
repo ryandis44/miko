@@ -8,9 +8,9 @@ import discord
 import logging # used for logging messages to the console and log file
 import os # used for exiting the program without error messages
 import signal # used for handling shutdown signals (ctrl+c)
-import wavelink
+import wavelink # used for music player
 
-from cogs_cmd_on_ready.MusicPlayer.WavelinkSetup import wavelink_setup # setup wavelink for music player
+from cogs_cmd_on_ready.MusicPlayer.WavelinkSetup import wavelink_setup, on_track_start # wavelink for music player
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
@@ -55,15 +55,14 @@ class Bot(commands.Bot):
         intents: discord.Intents = discord.Intents.all()
         super().__init__(command_prefix=tunables("COMMAND_PREFIX"), intents=intents, case_insensitive=True, help_command=None)
     
-    async def setup_hook(self) -> None:
-        nodes = [wavelink.Node(
-            uri=f"http://{VPN_IP}:2333",
-            password=tunables('WAVELINK_PASSWORD'),
-        )]
-        
-        await wavelink.Pool.connect(nodes=nodes, client=client, cache_capacity=None)
+    async def setup_hook(self) -> None: await wavelink_setup(self)
     
-    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None: print("Wavelink ready")
+    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
+        LOGGER.info(f"Wavelink node {payload.node} is ready.")
+    
+    async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
+        LOGGER.debug(f"Track {payload.track} started playing.")
+        await on_track_start(payload)
 
 client = Bot()
 console = Console(client=client)

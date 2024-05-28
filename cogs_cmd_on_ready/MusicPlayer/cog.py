@@ -81,10 +81,21 @@ class MusicPlayer(commands.Cog):
         
         tracks: wavelink.Search = await wavelink.Playable.search(search)
         
-        print(tracks)
+        # TODO
+
+
+
+    @app_commands.command(name="stop", description=f"{os.getenv('APP_CMD_PREFIX')}Stop playing and leave voice chat")
+    @app_commands.guild_only
+    async def disconnect(self, interaction: discord.Interaction) -> None:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        if not player:
+            await interaction.response.send_message(content="I'm not in a voice channel!", ephemeral=True)
+            return
         
+        await player.disconnect()
         
-        await msg.edit(content="hmm..")
+        await interaction.response.send_message(content="Disconnected and queue cleared.", ephemeral=True)
     
     
 
