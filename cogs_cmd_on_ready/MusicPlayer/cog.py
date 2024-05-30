@@ -11,6 +11,7 @@ import discord
 import os
 import wavelink
 
+from cogs_cmd_on_ready.MusicPlayer.UI import MikoMusic
 from Database.MikoCore import MikoCore
 from discord import app_commands
 from discord.ext import commands
@@ -54,8 +55,9 @@ class MusicPlayer(commands.Cog):
             except: pass
             return
         
+        # await MikoMusic(mc=mc).ainit()
         
-        
+        # return
         player: wavelink.Player
         player = cast(wavelink.Player, interaction.guild.voice_client)
         
@@ -79,7 +81,8 @@ class MusicPlayer(commands.Cog):
             except: pass
         
         
-        tracks: wavelink.Search = await wavelink.Playable.search(search)
+        tracks: wavelink.Search = await wavelink.Playable.search(search, source=wavelink.TrackSource)
+        print(tracks)
         
         if not tracks:
             await msg.edit(content=f"No tracks found for search: {search}")
@@ -90,7 +93,7 @@ class MusicPlayer(commands.Cog):
         else:
             track: wavelink.Playable = tracks[0]
             await player.queue.put_wait(track)
-            await msg.edit(content=f"Added {track} {track.artist} to the queue.")
+            await msg.edit(content=f"Added {track} {track.source} to the queue.")
         
         if not player.playing:
             await player.play(player.queue.get(), volume=30)

@@ -132,7 +132,7 @@ class MusicCog(commands.Cog):
                 attempt += 1
                 
 
-                player = interaction.client.lavalink.player_manager.create(interaction.guild.id)
+                player: lavalink.BasePlayer = interaction.client.lavalink.player_manager.create(interaction.guild.id)
                 original_search = search
                 search = search.strip('<>')
 

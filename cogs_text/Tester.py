@@ -39,7 +39,7 @@ class Tester(commands.Cog):
             f"{mc.user.usernames}\n"
             f"{mc.user.do_big_emojis} // {mc.guild.do_greet_new_members} // {mc.user.do_track_playtime}\n"
             f"{mc.profile.feature_enabled('BIG_EMOJIS')}\n"
-            f"{mc.user.client.guilds}\n"
+            # f"{mc.user.client.guilds}\n"
             f"{mc.profile.cmd_enabled('ANIME_SEARCH')}\n"
             f"Unique member number: {mc.user.member_number}\n"
             f"{__num}\n"
