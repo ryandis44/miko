@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 import lavalink
 from misc.misc import time_elapsed
-from tunables import *
 from Music.LavalinkClient import AUDIO_SESSIONS, ensure_voice
 from Database.GuildObjects import MikoMember
 

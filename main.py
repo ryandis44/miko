@@ -6,11 +6,11 @@ Any extra features are referenced by main.py, and are imported as needed. No cor
 import asyncio
 import discord
 import logging # used for logging messages to the console and log file
+import mafic # music player
 import os # used for exiting the program without error messages
 import signal # used for handling shutdown signals (ctrl+c)
-import wavelink # used for music player
 
-from cogs_cmd_on_ready.MusicPlayer.WavelinkSetup import wavelink_setup, on_track_start # wavelink for music player
+from cogs_cmd_on_ready.MusicPlayer.PlayerClass import track_end
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
@@ -54,15 +54,25 @@ class Bot(commands.Bot):
     def __init__(self) -> None:
         intents: discord.Intents = discord.Intents.all()
         super().__init__(command_prefix=tunables("COMMAND_PREFIX"), intents=intents, case_insensitive=True, help_command=None)
+        self.first_run = True
+        self.pool = mafic.NodePool(self)
     
-    async def setup_hook(self) -> None: await wavelink_setup(self)
     
-    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        LOGGER.info(f"Wavelink node {payload.node} is ready.")
     
-    async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
-        LOGGER.debug(f"Track {payload.track} started playing.")
-        await on_track_start(payload)
+    async def on_ready(self) -> None:
+        if self.first_run:
+            await self.pool.create_node(
+                host="192.168.0.12",
+                port=2333,
+                label="MAIN",
+                password=tunables('LAVALINK_PASSWORD'),
+            )
+        
+        LOGGER.log(level=logging.INFO, msg=f'Logged in as {client.user} {client.user.id}')
+        print('bot online') # for pterodactyl console for online status
+        await client.change_presence(activity=discord.Game(name=tunables("ACTIVITY_STATUS")))
+        await load_cogs_cmd_on_ready()
+        self.first_run = False
 
 client = Bot()
 console = Console(client=client)
@@ -125,6 +135,13 @@ async def on_member_join(member):
 async def on_raw_member_remove(payload):
     try: await on_raw_member_remove_caller(payload, client)
     except Exception as e: LOGGER.error(f"Error in on_raw_member_remove: {e}")
+
+
+
+@client.listen()
+async def on_track_end(event):
+    try: await track_end(event)
+    except Exception as e: LOGGER.error(f"Error in on_track_end: {e}")
 
 
 
@@ -200,11 +217,5 @@ async def main() -> None:
         # await load_cogs_console()
         await client.start(os.getenv('DISCORD_TOKEN'))
 
-@client.event
-async def on_ready() -> None:
-    LOGGER.log(level=logging.INFO, msg=f'Logged in as {client.user} {client.user.id}')
-    print('bot online') # for pterodactyl console for online status
-    await client.change_presence(activity=discord.Game(name=tunables("ACTIVITY_STATUS")))
-    await load_cogs_cmd_on_ready()
 
 asyncio.run(main())

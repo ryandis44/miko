@@ -1,5 +1,5 @@
 '''
-MusicPlayer
+Miko Music 3.0
 
 Plays music from the internet
 '''
@@ -8,9 +8,10 @@ Plays music from the internet
 
 import asyncio  
 import discord
+import mafic
 import os
-import wavelink
 
+from cogs_cmd_on_ready.MusicPlayer.PlayerClass import MikoPlayer
 from cogs_cmd_on_ready.MusicPlayer.UI import MikoMusic
 from Database.MikoCore import MikoCore
 from discord import app_commands
@@ -24,15 +25,12 @@ class MusicPlayer(commands.Cog):
 
 
     @app_commands.command(name="play", description=f"{os.getenv('APP_CMD_PREFIX')}Play content from the internet in voice chat")
-    @app_commands.describe(
-        search="Search for something..."
-    )
     @app_commands.guild_only
-    async def play_song(self, interaction: discord.Interaction, search: str) -> None:
+    async def play_song(self, interaction: discord.Interaction) -> None:
         
         ########################################
         mc = MikoCore()
-        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=True)
+        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=False)
         msg = await interaction.original_response()
         
         await mc.user_ainit(user=interaction.user, client=self.client)
@@ -44,7 +42,6 @@ class MusicPlayer(commands.Cog):
             return
         ########################################
         
-        
         # Ensure user is in a voice channel
         afk = interaction.guild.afk_channel
         if interaction.user.voice is None or \
@@ -55,68 +52,38 @@ class MusicPlayer(commands.Cog):
             except: pass
             return
         
-        # await MikoMusic(mc=mc).ainit()
+        await MikoMusic(mc=mc, msg=msg).ainit()
         
-        # return
-        player: wavelink.Player
-        player = cast(wavelink.Player, interaction.guild.voice_client)
-        
-        if not player:
-            try:
-                player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
-            except Exception as e: print(e)
-        
-        player.autoplay = wavelink.AutoPlayMode.disabled
-        
-        
-        # Lock player to this channel
-        if not hasattr(player, "home"):
-            player.home = interaction.channel
-        elif player.home != interaction.channel:
-            await msg.edit(content=(
-                f"Someone has already requested music in {player.home.mention}. Please move to that channel to play music."
-            ))
-            await asyncio.sleep(mc.tunables('QUICK_EPHEMERAL_DELETE_AFTER'))
-            try: await msg.delete() # declutter
-            except: pass
-        
-        
-        tracks: wavelink.Search = await wavelink.Playable.search(search, source=wavelink.TrackSource)
-        print(tracks)
-        
-        if not tracks:
-            await msg.edit(content=f"No tracks found for search: {search}")
-            await asyncio.sleep(mc.tunables('QUICK_EPHEMERAL_DELETE_AFTER'))
-            try: await msg.delete() # declutter
-            except: pass
-        
-        else:
-            track: wavelink.Playable = tracks[0]
-            await player.queue.put_wait(track)
-            await msg.edit(content=f"Added {track} {track.source} to the queue.")
-        
-        if not player.playing:
-            await player.play(player.queue.get(), volume=30)
-        
-        try:
-            await asyncio.sleep(mc.tunables('QUICK_EPHEMERAL_DELETE_AFTER'))
-            await msg.delete() # declutter
-        except: pass
-        
-
 
 
     @app_commands.command(name="stop", description=f"{os.getenv('APP_CMD_PREFIX')}Stop playing and leave voice chat")
     @app_commands.guild_only
     async def disconnect(self, interaction: discord.Interaction) -> None:
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: MikoPlayer = (interaction.guild.voice_client)
         if not player:
-            await interaction.response.send_message(content="I'm not in a voice channel!", ephemeral=True)
+            await interaction.response.send_message(content="I'm not in a voice channel.", ephemeral=True)
             return
         
         await player.disconnect()
         
         await interaction.response.send_message(content="Disconnected and queue cleared.", ephemeral=True)
+
+
+
+    @app_commands.command(name="skip", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
+    @app_commands.guild_only
+    async def skip_track(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(content="Skipped track.", ephemeral=False)
+        player: MikoPlayer = (interaction.guild.voice_client)
+        await player.skip()
+
+
+
+    @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
+    @app_commands.guild_only
+    async def queue(self, interaction: discord.Interaction) -> None:
+        player: MikoPlayer = (interaction.guild.voice_client)
+        await interaction.response.send_message(content=[track.title for track in player.queue], ephemeral=False)
     
     
 
