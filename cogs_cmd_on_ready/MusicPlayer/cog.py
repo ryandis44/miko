@@ -79,7 +79,7 @@ class MusicPlayer(commands.Cog):
 
 
 
-    @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
+    @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}List current player queue")
     @app_commands.guild_only
     async def queue(self, interaction: discord.Interaction) -> None:
         player: MikoPlayer = (interaction.guild.voice_client)

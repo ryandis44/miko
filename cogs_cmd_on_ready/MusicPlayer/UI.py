@@ -95,7 +95,7 @@ class MikoMusic(discord.ui.View):
         self.clear_items()
         self.__add_source_buttons()
         
-        await self.msg.edit(embed=embed, view=self, content=None)
+        await self.msg.edit(embed=embed, view=self, content="# MUSIC PLAYER EARLY ALPHA. NOT FINAL PRODUCT. CURRENT COMMANDS: /play, /stop, /skip, /queue")
 
 
 
@@ -154,20 +154,10 @@ class SearchModal(discord.ui.Modal):
         
         tracks = await player.fetch_tracks(self.query.value, search_type=search_type)
         
-        # print(tracks)
+        if isinstance(tracks, Playlist): tracks = tracks.tracks
         
-        if isinstance(tracks, Playlist):
-            tracks = tracks.tracks
-            print(len(tracks))
-        
-        
-        if player.current:
-            # player.queue.extend(tracks)
-            player.queue.append(tracks[0])
-        else:
-            await player.play(tracks[0])
-        
-        print(player.queue)
+        if player.current: player.queue.append(tracks[0])
+        else: await player.play(tracks[0])
         
         if self.source['emoji'] is None: source_emoji = SOURCES[tracks[0].source]['emoji']
         else: source_emoji = self.source['emoji']
