@@ -11,7 +11,7 @@ import discord
 import mafic
 import os
 
-from cogs_cmd_on_ready.MusicPlayer.PlayerClass import MikoPlayer
+from cogs_cmd_on_ready.MusicPlayer.Backend import MikoPlayer
 from cogs_cmd_on_ready.MusicPlayer.UI import MikoMusic
 from Database.MikoCore import MikoCore
 from discord import app_commands

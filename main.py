@@ -10,7 +10,7 @@ import mafic # music player
 import os # used for exiting the program without error messages
 import signal # used for handling shutdown signals (ctrl+c)
 
-from cogs_cmd_on_ready.MusicPlayer.PlayerClass import track_end
+from cogs_cmd_on_ready.MusicPlayer.Backend import track_end
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel

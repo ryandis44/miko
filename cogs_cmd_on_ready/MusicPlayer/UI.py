@@ -11,7 +11,7 @@ import discord
 
 from Database.MikoCore import MikoCore
 from Database.tunables import tunables
-from cogs_cmd_on_ready.MusicPlayer.PlayerClass import MikoPlayer
+from cogs_cmd_on_ready.MusicPlayer.Backend import MikoPlayer
 from mafic import SearchType, Playlist
 
 SOURCES = {
@@ -139,7 +139,7 @@ class SearchModal(discord.ui.Modal):
         
         if not interaction.guild.voice_client:
             channel = interaction.user.voice.channel
-            await channel.connect(cls=MikoPlayer)
+            await channel.connect(cls=MikoPlayer, self_deaf=True)
         
         player: MikoPlayer = (
             interaction.guild.voice_client
