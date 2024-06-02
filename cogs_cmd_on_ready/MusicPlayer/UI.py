@@ -167,6 +167,8 @@ class SearchModal(discord.ui.Modal):
             'track': tracks[0],
         })
         
+        await self.mc.user.increment_statistic("ALPHA_MUSIC_PLAYER_TRACKS_QUEUED")
+        
         if self.source['emoji'] is None: source_emoji = SOURCES[tracks[0].source]['emoji']
         else: source_emoji = self.source['emoji']
         
