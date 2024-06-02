@@ -156,8 +156,16 @@ class SearchModal(discord.ui.Modal):
         
         if isinstance(tracks, Playlist): tracks = tracks.tracks
         
-        if player.current: player.queue.append(tracks[0])
-        else: await player.play(tracks[0])
+        if player.current: player.queue.append([{
+            'user': self.mc,
+            'source': self.source if self.source['emoji'] is not None else SOURCES[tracks[0].source],
+            'track': tracks[0],
+        }])
+        else: await player.play(data={
+            'user': self.mc,
+            'source': self.source if self.source['emoji'] is not None else SOURCES[tracks[0].source],
+            'track': tracks[0],
+        })
         
         if self.source['emoji'] is None: source_emoji = SOURCES[tracks[0].source]['emoji']
         else: source_emoji = self.source['emoji']

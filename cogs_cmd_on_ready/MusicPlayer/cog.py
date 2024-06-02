@@ -30,7 +30,7 @@ class MusicPlayer(commands.Cog):
         
         ########################################
         mc = MikoCore()
-        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=False)
+        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=True)
         msg = await interaction.original_response()
         
         await mc.user_ainit(user=interaction.user, client=self.client)
@@ -52,6 +52,16 @@ class MusicPlayer(commands.Cog):
             except: pass
             return
         
+        # Ensure a music channel has been set
+        if mc.guild.music_channel is None:
+            await msg.edit(
+                content=(
+                    "Error: To use this feature, a server admin with **`Manage Server`** permission must "
+                    f"set a music channel using {mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')}."
+                )
+            )
+            return
+        
         await MikoMusic(mc=mc, msg=msg).ainit()
         
 
@@ -70,20 +80,20 @@ class MusicPlayer(commands.Cog):
 
 
 
-    @app_commands.command(name="skip", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
-    @app_commands.guild_only
-    async def skip_track(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message(content="Skipped track.", ephemeral=False)
-        player: MikoPlayer = (interaction.guild.voice_client)
-        await player.skip()
+    # @app_commands.command(name="skip", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
+    # @app_commands.guild_only
+    # async def skip_track(self, interaction: discord.Interaction) -> None:
+    #     await interaction.response.send_message(content="Skipped track.", ephemeral=False)
+    #     player: MikoPlayer = (interaction.guild.voice_client)
+    #     await player.skip()
 
 
 
-    @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}List current player queue")
-    @app_commands.guild_only
-    async def queue(self, interaction: discord.Interaction) -> None:
-        player: MikoPlayer = (interaction.guild.voice_client)
-        await interaction.response.send_message(content=[track.title for track in player.queue], ephemeral=False)
+    # @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}List current player queue")
+    # @app_commands.guild_only
+    # async def queue(self, interaction: discord.Interaction) -> None:
+    #     player: MikoPlayer = (interaction.guild.voice_client)
+    #     await interaction.response.send_message(content=[track.title for track in player.queue], ephemeral=False)
     
     
 
