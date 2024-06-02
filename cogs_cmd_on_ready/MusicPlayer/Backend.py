@@ -6,6 +6,7 @@ import time
 
 from Database.MikoCore import MikoCore
 from discord.ext.commands import Bot
+from misc.misc import time_elapsed
 from typing import List, Dict, Union
 LOGGER = logging.getLogger()
 
@@ -19,7 +20,7 @@ class MikoPlayer(mafic.Player):
         self.queue: List[Dict[str, Union[MikoCore, dict, mafic.Track]]] = []
         self.persistent_player = PersistentPlayer(client=client, channel=channel, player=self)
         
-        self.currently_playing = dict[Union['user': MikoCore, 'source': dict, 'track': mafic.Track]]
+        self.currently_playing = dict[Union[MikoCore, dict, mafic.Track]]
     
     
     
@@ -31,6 +32,35 @@ class MikoPlayer(mafic.Player):
         await super().play(data['track'])
         self.currently_playing = data
         await self.persistent_player.ainit()
+    
+    
+    
+    async def enqueue(self, mc: MikoCore, source: dict, tracks: list[mafic.Track]) -> None:
+        
+        if type(tracks) is not list:
+            tracks = [tracks]
+        
+        for i, track in enumerate(tracks):
+            
+            # If the player is not currently playing anything, play the first track.
+            # Only consider this for the first iteration of the loop, as the player
+            # is guaranteed to be playing something after the first iteration.
+            if i == 0 and self.current is None:
+                await self.play(
+                    data={
+                        'user': mc,
+                        'source': source,
+                        'track': track
+                    }
+                )
+            
+            # If the player is currently playing something, add the track to the queue
+            else:
+                self.queue.append([{
+                    'user': mc,
+                    'source': source,
+                    'track': track
+                }])
     
     
     
@@ -85,46 +115,20 @@ class PersistentPlayer(discord.ui.View):
     
     
     
-    def __time_elapsed(self, seconds: int, format: str) -> str:
-        secs = seconds
-        minutes, seconds = divmod(seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-        
-        match format:
-            case ":":
-                return "%d:%02d:%02d" % (hours, minutes, seconds)
-            case "h":
-                temp = []
-                
-                d = False
-                h = False
-                if days > 0:
-                    temp.append(f"{days}d ")
-                    d = True
-                if hours > 0 or d is True:
-                    temp.append(f"{hours}h ")
-                    h = True
-                if minutes > 0 or h is True:
-                    temp.append(f"{minutes}m ")
-                temp.append(f"{seconds}s")
-                return ''.join(temp)
-            
-            case "r":
-                return (secs / 60) / 60
-    
-    
-    
     async def __player_embed(self) -> discord.Embed:
         temp = []
         
         # Currently playing section
-        dur = self.__time_elapsed(int(self.player.current.length / 1000), ':')
+        dur = time_elapsed(int(self.player.current.length / 1000), ':')
         temp.append(
-            f"\u200b \u200b├─ Title: **`{self.player.currently_playing['track'].title}`**\n"
-            f"\u200b \u200b├─ By: **`{self.player.currently_playing['track'].author}`**\n"
+            f"\u200b \u200b├─ Title: **`{self.player.currently_playing['track'].title}`**\n" # type: ignore
+            f"\u200b \u200b├─ By: **`{self.player.currently_playing['track'].author}`**\n" # type: ignore
             f"\u200b \u200b├─ Timestamp: **`0 / {dur}`**\n"
             f"\u200b \u200b└─ Source: [WIP]\n"
+        )
+        
+        temp.append(
+            f"{self.player.currently_playing['user'].user.first_join}" # type: ignore
         )
         
         # Queue section
