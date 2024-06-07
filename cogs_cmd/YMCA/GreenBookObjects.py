@@ -368,7 +368,7 @@ class GreenBook:
             if ch is not None:
                 await ch.send(
                     content=(
-                        f"{self.mc.user.user.mention} (`{self.mc.user.username}`) added `{rp.last}`, `{rp.first}`『`Age {rp.age}`』to the book "
+                        f"{self.mc.user.user.mention} added `{rp.last}`, `{rp.first}`『`Age {rp.age}`』to the book "
                         f"as a {rp.wristband_emoji} `{rp.wristband}` band on {rp.pass_time_formatted} using {self.mc.tunables('SLASH_COMMAND_SUGGEST_BOOK')}"
                     ),
                     allowed_mentions=discord.AllowedMentions(users=False),
