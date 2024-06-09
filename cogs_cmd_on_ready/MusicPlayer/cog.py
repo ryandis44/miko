@@ -93,7 +93,12 @@ class MusicPlayer(commands.Cog):
             await msg.edit(content=f"You must be in {interaction.guild.voice_client.channel.mention} to use this.")
             return
 
-        await player.disconnect()
+        await player.stop(
+            reason={
+                'trigger': 'user_stop',
+                'user': mc
+            }
+        )
         
         await msg.edit(content="Disconnected and queue cleared.")
     

@@ -127,28 +127,49 @@ class MikoPlayer(mafic.Player):
     
     
     
-    async def stop(self) -> None:
-        self.queue.clear()
-        try: await super().stop()
-        except: pass
-        try: await super().disconnect(force=True)
-        except: pass
+    async def stop(self, reason: dict = None) -> None:
+        desc = f"Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again."
+        
+        if self.msg.embeds:
+            if self.msg.embeds[0].description == desc: return
+        
+        if not reason: reason = {'trigger': 'queue_complete'}
+        
+        match reason['trigger']:
+            
+            case 'queue_complete':
+                name = "Queue complete"
+                icon_url = self.client.user.avatar
+            
+            case 'user_stop':
+                name = f"Playback stopped by {reason['user'].user.username}"
+                icon_url = reason['user'].user.miko_avatar
+            
+            case 'disconnect_vc':
+                name = "Disconnected from voice channel by an admin"
+                icon_url = self.client.user.avatar
         
         __embed = discord.Embed(
             color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
-            description=f"Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again."
+            description=desc
         )
         __embed.set_author(
-            name=f"Playback ended",
-            icon_url=self.client.user.avatar
+            name=name,
+            icon_url=icon_url
         )
         
         try:
-            await self.msg.edit(
+            self.msg = await self.msg.edit(
                 content=None,
                 embed=__embed,
                 view=None
             )
+        except: pass
+        
+        self.queue.clear()
+        try: await super().stop()
+        except: pass
+        try: await super().disconnect(force=True)
         except: pass
     
     
@@ -313,8 +334,15 @@ class PlayerButtons(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏹️', custom_id='stop_song', disabled=False, row=2)
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        mc = MikoCore()
+        await mc.user_ainit(user=interaction.user, client=self.player.client)
         await interaction.response.edit_message()
-        await self.player.stop()
+        await self.player.stop(
+            reason={
+                'trigger': 'user_stop',
+                'user': mc
+            }
+        )
 
 
 

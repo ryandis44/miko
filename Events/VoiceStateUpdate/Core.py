@@ -15,7 +15,12 @@ async def caller(member: discord.Member, before: discord.VoiceState, after: disc
     mc = MikoCore()
     if not mc.tunables('EVENT_ENABLED_ON_VOICE_STATE_UPDATE'): return
     
-    player = (member.guild.voice_client)
-    
-    if before.channel is not None and after.channel is None:
-        await player.stop()
+    # Stop player only if Miko left the voice channel
+    if member.id == client.user.id:
+        player = (member.guild.voice_client)
+        if before.channel is not None and after.channel is None:
+            await player.stop(
+                reason={
+                    'trigger': 'disconnect_vc'
+                }
+            )
