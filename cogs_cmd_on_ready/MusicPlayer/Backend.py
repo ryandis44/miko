@@ -340,11 +340,13 @@ class PlayerButtons(discord.ui.View):
         stop = [x for x in self.children if x.custom_id=="stop_song"][0]
         next = [x for x in self.children if x.custom_id=="next_song"][0]
         vol = [x for x in self.children if x.custom_id=="volume"][0]
+        queue = [x for x in self.children if x.custom_id=="full_queue"][0]
 
         stop.disabled = False
         pause_play.emoji = '⏸️' if not self.player.paused else '▶️'
         next.disabled = True if self.player.queue == [] else False
         vol.disabled = False
+        queue.disabled = True if len(self.player.queue) <= self.player.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS') else False
     
 
 
@@ -378,10 +380,9 @@ class PlayerButtons(discord.ui.View):
     
     
     
-    # @discord.ui.button(style=discord.ButtonStyle.gray, emoji='➕', custom_id='enqueue', disabled=False, row=2)
-    # async def enqueue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-    #     await interaction.response.edit_message()
-    #     await Miko
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='📃', custom_id='full_queue', disabled=True, row=2)
+    async def full_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        await interaction.response.edit_message()
     
     
     
