@@ -383,6 +383,7 @@ class PlayerButtons(discord.ui.View):
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji='📃', custom_id='full_queue', disabled=True, row=2)
     async def full_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.edit_message()
+        await FullQueue(mc=self.player.mc)
     
     
     
@@ -427,3 +428,25 @@ class VolumeDropdown(discord.ui.Select):
         try: await interaction.response.edit_message()
         except: pass
         await self.player.set_volume(int(self.values[0]))
+
+
+
+class FullQueue(discord.ui.View):
+    def __init__(self, mc: MikoCore) -> None:
+        super().__init__(timeout=mc.tunables('MUSIC_VIEW_TIMEOUT'))
+        self.mc = mc
+    
+    
+    
+    async def on_timeout(self) -> None:
+        pass
+    
+    
+    
+    async def ainit(self) -> None:
+        pass
+    
+    
+    
+    def __embed(self) -> discord.Embed:
+        pass
