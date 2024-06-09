@@ -69,32 +69,33 @@ class MusicPlayer(commands.Cog):
     @app_commands.command(name="stop", description=f"{os.getenv('APP_CMD_PREFIX')}Stop playing and leave voice chat")
     @app_commands.guild_only
     async def disconnect(self, interaction: discord.Interaction) -> None:
+
+        ########################################
+        mc = MikoCore()
+        await interaction.response.send_message(content=mc.tunables('LOADING_EMOJI'), ephemeral=True)
+        msg = await interaction.original_response()
+        
+        await mc.user_ainit(user=interaction.user, client=self.client)
+        if mc.profile.feature_enabled('MUSIC_CHANNEL') == 0:
+            await msg.edit(content=mc.tunables('COMMAND_DISABLED_GUILD_MESSAGE'))
+            return
+        elif mc.profile.feature_enabled('MUSIC_CHANNEL') == 2:
+            await msg.edit(content=mc.tunables('COMMAND_DISABLED_MESSAGE'))
+            return
+        ########################################
+        
         player: MikoPlayer = (interaction.guild.voice_client)
         if not player:
-            await interaction.response.send_message(content="I'm not in a voice channel.", ephemeral=True)
+            await msg.edit(content="I'm not in a voice channel.")
             return
-        
+
+        if interaction.user.voice is None or interaction.user.voice.channel.id != player.channel.id:
+            await msg.edit(content=f"You must be in {interaction.guild.voice_client.channel.mention} to use this.")
+            return
+
         await player.disconnect()
         
-        await interaction.response.send_message(content="Disconnected and queue cleared.", ephemeral=True)
-
-
-
-    @app_commands.command(name="skip", description=f"{os.getenv('APP_CMD_PREFIX')}Skip current track")
-    @app_commands.guild_only
-    async def skip_track(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message(content="Skipped track.", ephemeral=False)
-        player: MikoPlayer = (interaction.guild.voice_client)
-        await player.skip()
-
-
-
-    @app_commands.command(name="queue", description=f"{os.getenv('APP_CMD_PREFIX')}List current player queue")
-    @app_commands.guild_only
-    async def queue(self, interaction: discord.Interaction) -> None:
-        player: MikoPlayer = (interaction.guild.voice_client)
-        print(player.queue)
-        await interaction.response.send_message(content=[track['track'].title for track in player.queue], ephemeral=False)
+        await msg.edit(content="Disconnected and queue cleared.")
     
     
 

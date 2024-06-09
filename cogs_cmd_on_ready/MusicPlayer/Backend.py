@@ -127,13 +127,24 @@ class MikoPlayer(mafic.Player):
     
     async def stop(self) -> None:
         self.queue.clear()
-        await super().stop()
-        await super().disconnect(force=True)
+        try: await super().stop()
+        except: pass
+        try: await super().disconnect(force=True)
+        except: pass
+        
+        __embed = discord.Embed(
+            color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
+            description=f"Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again."
+        )
+        __embed.set_author(
+            name=f"Playback ended",
+            icon_url=self.client.user.avatar
+        )
         
         try:
             await self.msg.edit(
-                content="Player stopped and queue cleared.",
-                embed=None,
+                content=None,
+                embed=__embed,
                 view=None
             )
         except: pass
