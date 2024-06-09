@@ -36,7 +36,20 @@ class MikoPlayer(mafic.Player):
     
     
     
-    async def skip(self) -> None: await super().stop()
+    async def skip(self, mc: MikoCore) -> None:
+        
+        try:
+            await self.mc.guild.music_channel.send(
+                content=(
+                    f"‼️ {mc.user.user.mention} skipped {self.currently_playing['source']} " # type: ignore
+                    f"[{self.currently_playing['track'].title}]({self.currently_playing['track'].uri}) by **`{self.currently_playing['track'].author}`**" # type: ignore
+                ),
+                allowed_mentions=discord.AllowedMentions(users=False),
+                suppress_embeds=True
+            )
+        except Exception as e: LOGGER.error(f"Failed to notify music channel of skipped track: {self.mc.guild.guild} : {e}")
+        
+        await super().stop()
     
     
     
@@ -119,7 +132,7 @@ class MikoPlayer(mafic.Player):
                     allowed_mentions=discord.AllowedMentions(users=False),
                     suppress_embeds=True
                 )
-        except Exception as e: LOGGER.error(f"Failed to notify music channel of enqueued tracks: {e}")
+        except Exception as e: LOGGER.error(f"Failed to notify music channel of enqueued tracks: {self.mc.guild.guild} : {e}")
         
         ########################################
         
@@ -206,7 +219,7 @@ class MikoPlayer(mafic.Player):
         
         if self.msg is not None:
             try: await self.msg.delete()
-            except Exception as e: LOGGER.error(f"Failed to delete persistent player message: {e}")
+            except Exception as e: LOGGER.error(f"Failed to delete persistent player message: {self.mc.guild.guild} : {e}")
             
             
         self.__last_reposition = int(time.time())
@@ -355,8 +368,10 @@ class PlayerButtons(discord.ui.View):
     
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏭️', custom_id='next_song', disabled=True, row=2)
     async def skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        mc = MikoCore()
+        await mc.user_ainit(user=interaction.user, client=self.player.client)
         await interaction.response.edit_message()
-        await self.player.skip()
+        await self.player.skip(mc=mc)
     
     
     
