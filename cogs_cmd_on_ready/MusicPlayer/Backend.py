@@ -105,8 +105,8 @@ class MikoPlayer(mafic.Player):
             if len(tracks) == 1:
                 __title = sanitize_track_name(tracks[0].title)
                 __author = sanitize_track_name(tracks[0].author)
-                if len(__title) > mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
-                if len(__author) > mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+                if len(__title) > 103: __title = f"{__title[:100]}..."
+                if len(__author) > 103: __author = f"{__author[:100]}..."
                 
                 await mc.guild.music_channel.send(
                     content=f"🎵 {mc.user.user.mention} added {source} [{__title}]({tracks[0].uri}) by **`{__author}`** to the queue.",

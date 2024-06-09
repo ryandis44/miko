@@ -143,7 +143,7 @@ class MikoMusic(discord.ui.View):
             temp.append(f"**Top 10 tracks for** `{__query}`\n")
         
         temp.append(
-            "`[`, `]`, `*`, `_`, `/` _removed from titles for formatting purposes_\n"
+            "`[`, `]`, `*`, `_` _removed from titles for formatting purposes_\n"
         )
         
         if isinstance(tracks, Playlist): all_tracks = tracks.tracks
@@ -197,8 +197,12 @@ class MikoMusic(discord.ui.View):
             temp.append(f"Added {source['emoji']} **`{len(all_tracks):,} track{'s' if len(all_tracks) > 1 else ''}` to queue**\n")
         
         else:
+            __title = sanitize_track_name(all_tracks[0].title)
+            __author = sanitize_track_name(all_tracks[0].author)
+            if len(__title) > 103: __title = f"{__title[:100]}..."
+            if len(__author) > 103: __author = f"{__author[:100]}..."
             temp.append(
-                f"Added {source['emoji']} [{all_tracks[0].title}]({all_tracks[0].uri}) by **`{all_tracks[0].author}`** to queue\n"
+                f"Added {source['emoji']} [{__title}]({all_tracks[0].uri}) by **`{__author}`** to queue\n"
             )
         
         temp.append(
