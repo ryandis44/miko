@@ -143,7 +143,7 @@ class MikoMusic(discord.ui.View):
             temp.append(f"**Top 10 tracks for** `{__query}`\n")
         
         temp.append(
-            "`[`, `]`, `*`, `_` _removed from titles for formatting purposes_\n"
+            "`[`, `]`, `*`, `_`, `/` _removed from titles for formatting purposes_\n"
         )
         
         if isinstance(tracks, Playlist): all_tracks = tracks.tracks

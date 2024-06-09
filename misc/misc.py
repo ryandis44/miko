@@ -117,7 +117,7 @@ def generate_nickname(message: discord.Message):
     return f"{word1} {word2}"
 
 def sanitize_track_name(track: str):
-    name = track.translate({ ord(c): None for c in "[]*_" })
+    name = track.translate({ ord(c): None for c in "[]*_/" })
     return name
 
 def today():
