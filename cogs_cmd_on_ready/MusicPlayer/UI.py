@@ -82,12 +82,13 @@ class MikoMusic(discord.ui.View):
         try: await self.msg.delete()
         except: pass
         
+        # TODO
         # Ensure Miko does not stay in voice chat indefinitely
         # if no tracks are enqueued
-        try:
-            if not self.player.current:
-                await self.player.stop()
-        except: pass
+        # try:
+        #     if not self.player.current:
+        #         await self.player.stop()
+        # except: pass
         
     
     
@@ -169,7 +170,7 @@ class MikoMusic(discord.ui.View):
         if isinstance(tracks, Playlist): # for whole playlist/album
             if i < len(tracks.tracks):
                 temp.append(
-                    f"\n_+ {len(tracks.tracks) - i:,} more tracks in this playlist_\n"
+                    f"\n...and **`{len(tracks.tracks) - i:,}`** more in this playlist\n"
                 )
             self.add_item(EnqueueTracksButton(mc=self.mc, tracks=tracks.tracks, source=source))
             __shuffle_button = EnqueueTracksButton(mc=self.mc, tracks=tracks.tracks, source=source)
@@ -312,7 +313,26 @@ class SearchModal(discord.ui.Modal):
         
         await self.mmusic.msg.edit(content=self.mc.tunables('LOADING_EMOJI'), embed=None, view=None)
         
-        tracks = await self.mmusic.player.fetch_tracks(self.query.value, search_type=search_type)
+        try: tracks = await self.mmusic.player.fetch_tracks(self.query.value, search_type=search_type)
+        except Exception as e:
+            await self.mmusic.msg.edit(
+                embed=discord.Embed(
+                    title="An error occurred, please try again",
+                    color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
+                    description=(
+                        f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
+                        f"An error occurred while searching for **`{self.query.value}`**\n\n"
+                        "```py\n"
+                        f"Error: {e}"
+                        "```\n\n"
+                        "If trying to queue a YouTube Music radio, start the radio and paste the "
+                        "URL when it has `/watch?v=...` in the address bar (instead of `/playlist?list=...`)."
+                    )
+                ),
+                content=None,
+                view=self.mmusic
+            )
+            return
         
         if isinstance(tracks, Playlist): all_tracks = tracks.tracks
         else: all_tracks = tracks
@@ -347,7 +367,7 @@ class SearchModal(discord.ui.Modal):
         elif len(all_tracks) == 0:
             await self.mmusic.msg.edit(
                 embed=discord.Embed(
-                    title="No results found",
+                    title="No results found, please try again",
                     color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
                     description=(
                         f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"

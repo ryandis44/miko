@@ -161,6 +161,9 @@ class MikoPlayer(mafic.Player):
             case 'disconnect_vc':
                 name = "Disconnected from voice channel by an admin"
                 icon_url = self.client.user.avatar
+            
+            case 'bot_restart':
+                pass # TODO
         
         __embed = discord.Embed(
             color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
@@ -391,7 +394,8 @@ class PlayerButtons(discord.ui.View):
             interaction.guild.voice_client.channel.id:
                 await interaction.response.send_message(
                     content=f"You must be in {interaction.guild.voice_client.channel.mention} to use this.",
-                    ephemeral=True
+                    ephemeral=True,
+                    delete_after=10
                 )
                 return False
         return True
