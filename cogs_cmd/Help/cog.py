@@ -190,7 +190,7 @@ async def help_embed(mc: MikoCore) -> list:
 
 
 
-    if mc.guild.profile_text == "THEBOYS":
+    if mc.guild.profile_text == "YMCA":
         ymca_cmds = []
         if pr.cmd_enabled('YMCA_GREEN_BOOK') == 1: ymca_cmds.append(f"> **{mc.tunables('SLASH_COMMAND_SUGGEST_BOOK')}**: Swim test book for tracking kids that can swim\n")
         if len(ymca_cmds) > 0:
@@ -208,7 +208,6 @@ async def help_embed(mc: MikoCore) -> list:
     if pr.cmd_enabled('ROLL') == 1: chat_cmds.append(f"**{p}r**, **{p}roll**: :game_die: Roll a number between 0 and 100\n")
     if pr.cmd_enabled('EIGHT_BALL') == 1: chat_cmds.append(f"**{p}8b**, **{p}8ball**: :8ball: Ask an 8 ball any question\n")
     if pr.cmd_enabled('COIN_FLIP') == 1: chat_cmds.append(f"**{p}fl**, **{p}flip**: :coin: Flip a coin\n")
-    if pr.cmd_enabled('ANIME_SEARCH') == 1: chat_cmds.append(f"**{p}as**, **{p}anisearch**: <:uwuyummy:958323925803204618> Search for any anime\n")
     if pr.cmd_enabled('USER_INFO') == 1: chat_cmds.append(f"**{p}s**, **{p}info**: :bar_chart: User Stats/Info\n")
     if len(chat_cmds) > 0:
         temp.append(":speech_balloon: __**Text Commands**__:\n> ")
@@ -222,25 +221,25 @@ async def help_embed(mc: MikoCore) -> list:
     slash_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')}: :gear: Change {mc.user.client.user.mention} settings (for yourself and {mc.guild.guild.name})\n")
     if pr.cmd_enabled('PLAYTIME') == 1: slash_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_PLAYTIME')}: :video_game: Playtime tracking and detailed searching\n")
     if pr.cmd_enabled('VOICETIME') == 1: slash_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_VOICETIME')}: :microphone2: Voicechat tracking and detailed searching\n")
+    if pr.cmd_enabled('ANIME_SEARCH') == 1: slash_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_ANIME_SEARCH')}: <:uwuyummy:958323925803204618> Search for any anime (pulled from AniList)\n")
     temp.append(":computer: __**Slash Commands**__:\n> ")
     temp.append('> '.join(slash_cmds))
 
 
 
-    if pr.cmd_enabled('PLAY') == 1:
+    if pr.feature_enabled('MUSIC_CHANNEL') == 1:
         music_cmds = []
         music_cmds.append(
             "Your guild has been granted access music commands and has "
             "access to all features that come with it. This access includes "
             "YouTube. Because of this, this command will remain private and "
             "restricted to limited guilds.\n\n"
+            f"**You must set a music channel with {mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')} to use "
+            "any music features**. This channel will be used for all music player visuals and updates. "
+            "Additionally, any messages not from Miko in this channel will be deleted during playback.\n\n"
         )
         music_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')}: :musical_note: Play a song/video from any (soon; YT for now) source.\n")
         music_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_STOP')}: :stop_button: Stops playback and disconnects from voice chat\n")
-        music_cmds.append(f"{mc.tunables('SLASH_COMMAND_SUGGEST_MUSICCHANNEL')}: :information_source: **Required for all music features**: Set a channel \
-                        to be a dedicated music channel. This channel will have a persistent player embed that {mc.user.client.user.mention} \
-                        will update. You can skip, pause, stop, control volume, and more with this embed. \
-                        Run this command without arguments to deselect the current music channel.\n")
         temp.append("\n:notes: __**Music Player Commands and Info**__:\n")
         temp.append('> '.join(music_cmds))
 
