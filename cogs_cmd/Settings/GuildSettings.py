@@ -98,7 +98,7 @@ class MusicChannel(Setting):
         super().__init__(
             mc=mc,
             name = "Music Channel",
-            desc = "Required to use music features. Set a channel for music updates and commands",
+            desc = "Required to use music features. Set a channel for music updates and commands. Any messages not from Miko will be deleted.",
             emoji = "🎵",
             table = "GUILD_SETTINGS",
             col = "music_channel",

@@ -11,6 +11,7 @@ from Database.MikoCore import MikoCore
 from discord.ext.commands import Bot
 from Events.Message.BigEmojis import big_emojis
 from Events.Message.BruhReact import bruh_react
+from Events.Message.MusicPlayerReposition import reposition_music_player
 from Events.Message.ReplyToMention import reply_to_mention
 LOGGER = logging.getLogger()
 
@@ -23,6 +24,10 @@ async def caller(message: discord.Message, client: Bot) -> None:
     if mc.tunables('PROCESS_TEXT_COMMANDS'): await client.process_commands(message) # discord.py function for handling all text commands
     if not mc.tunables('EVENT_ENABLED_ON_MESSAGE'): return
     await mc.message_ainit(message=message, client=client)
+    
+    try:
+        if await reposition_music_player(mc): return # reposition music player if applicable
+    except Exception as e: LOGGER.error(f"Error in reposition_music_player: {e}")
     
     try:
         if await big_emojis(mc): return # do not process message further if big emoji is created

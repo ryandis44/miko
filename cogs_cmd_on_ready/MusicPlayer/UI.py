@@ -2,7 +2,7 @@
 Miko Music 3.0
 
 
-File responsible for all visuals of the music player
+File responsible for all client-sided UI elements of the music player
 '''
 
 
@@ -67,6 +67,8 @@ class MikoMusic(discord.ui.View):
     def __init__(self, mc: MikoCore, msg: discord.Message):
         self.mc = mc
         self.msg = msg
+        self.__enqueued: bool = False
+        self.player: MikoPlayer = None
         super().__init__(timeout=mc.tunables('MUSIC_VIEW_TIMEOUT'))
         
         
@@ -80,19 +82,26 @@ class MikoMusic(discord.ui.View):
         try: await self.msg.delete()
         except: pass
         
+        # Ensure Miko does not stay in voice chat indefinitely
+        # if no tracks are enqueued
+        try:
+            if not self.player.current:
+                await self.player.stop()
+        except: pass
+        
     
     
-    def __add_source_buttons(self) -> None:
+    def add_source_buttons(self) -> None:
         for key, button in SOURCES.items():
             self.add_item(SourceButton(mc=self.mc, source=button))
     
     
     
-    # Responsible for listing sources and prompting query
-    async def prompt_sources(self) -> None:
-        
+    def __sources_embed(self) -> discord.Embed:
         temp = []
         temp.append(
+            f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
+            f"Max queue length: **`{self.mc.tunables('MUSIC_PLAYER_QUEUE_CAPACITY'):,}`** tracks\n\n"
             "**Select a source to search from**.\n"
             "*URL must be from one of the\n"
             "below sources and can be a\n"
@@ -101,32 +110,53 @@ class MikoMusic(discord.ui.View):
         
         embed = discord.Embed(color=self.mc.tunables('GLOBAL_EMBED_COLOR'), description=''.join(temp))
         embed.set_author(name=f"{self.mc.guild.guild.me.name} Music", icon_url=self.mc.guild.guild.me.avatar)
+        return embed
+    
+    
+    
+    # Responsible for listing sources and prompting query
+    async def prompt_sources(self) -> None:
         
         self.clear_items()
-        self.__add_source_buttons()
+        self.add_source_buttons()
         
-        await self.msg.edit(embed=embed, view=self, content="# MUSIC PLAYER EARLY ALPHA. NOT FINAL PRODUCT. CURRENT COMMANDS: /play, /stop, /skip, /queue")
+        await self.msg.edit(embed=self.__sources_embed(), view=self, content=None)
     
     
     
     # Responsible for selecting search results
-    async def prompt_tracks(self, tracks: list[mafic.Track], source: dict) -> None:
+    async def prompt_tracks(self, query: str, tracks: list[mafic.Track], source: dict) -> None:
         
         temp = []
         
         temp.append(
-            f"This embed will expire in <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.\n\n"
+            f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
+        )
+        
+        if isinstance(tracks, Playlist):
+            __playlist_name = sanitize_track_name(tracks.name)
+            if len(__playlist_name) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __playlist_name = f"{__playlist_name[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            temp.append(f"**Top 10 tracks from** `{__playlist_name}`\n")
+        else:
+            __query = sanitize_track_name(query)
+            if len(query) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __query = f"{__query[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            temp.append(f"**Top 10 tracks for** `{__query}`\n")
+        
+        temp.append(
             "`[`, `]`, `*`, `_` _removed from titles for formatting purposes_\n"
         )
         
+        if isinstance(tracks, Playlist): all_tracks = tracks.tracks
+        else: all_tracks = tracks
+        
         i = 0
-        for track in tracks:
+        for track in all_tracks:
             i += 1
             dur = time_elapsed(int(track.length / 1000), ':')
             title = sanitize_track_name(track.title)
             author = sanitize_track_name(track.author)
-            if len(title) > 23: title = f"{title[:20]}..."
-            if len(author) > 23: author = f"{author[:20]}..."
+            if len(title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: title = f"{title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            if len(author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: author = f"{author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
             
             temp.append(
                 f"{emojis_1to10(i-1)} {source['emoji']} [{title}]({track.uri}) by **`{author}`** 『`{dur}`』\n"
@@ -134,17 +164,54 @@ class MikoMusic(discord.ui.View):
             
             if i >= 10: break
         
+        self.clear_items()
+        self.add_source_buttons()
+        if isinstance(tracks, Playlist): # for whole playlist/album
+            if i < len(tracks.tracks):
+                temp.append(
+                    f"\n_+ {len(tracks.tracks) - i:,} more tracks in this playlist_\n"
+                )
+            self.add_item(EnqueueTracksButton(mc=self.mc, tracks=tracks.tracks, source=source))
+            __shuffle_button = EnqueueTracksButton(mc=self.mc, tracks=tracks.tracks, source=source)
+            __shuffle_button.label = f"{__shuffle_button.label}, but shuffled"
+            __shuffle_button.custom_id = "shuffle_tracks"
+            __shuffle_button.row = 4
+            self.add_item(__shuffle_button)
+                
+        else: self.add_item(TrackSelectDropdown(tracks=tracks, source=source)) # for single track
+        
         embed = discord.Embed(
             title='Search Results',
             color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
             description=''.join(temp)
         )
         
-        self.clear_items()
-        self.__add_source_buttons()
-        self.add_item(TrackSelectDropdown(tracks=tracks, source=source))
-        
         await self.msg.edit(embed=embed, content=None, view=self)
+
+    
+    
+    async def notify_enqueued(self, all_tracks: list[mafic.Track], source: dict) -> None:
+        temp = []
+        
+        if len(all_tracks) > 1:
+            temp.append(f"Added {source['emoji']} **`{len(all_tracks):,} track{'s' if len(all_tracks) > 1 else ''}` to queue**\n")
+        
+        else:
+            temp.append(
+                f"Added {source['emoji']} [{all_tracks[0].title}]({all_tracks[0].uri}) by **`{all_tracks[0].author}`** to queue\n"
+            )
+        
+        temp.append(
+            f"View the active player in {self.mc.guild.music_channel.mention}."
+            "\n\n"
+            "**Optionally queue more tracks below!**"
+        )
+        
+        await self.msg.edit(
+            embed=self.__sources_embed(),
+            view=self,
+            content=''.join(temp)
+        )
 
 
 
@@ -165,6 +232,43 @@ class SourceButton(discord.ui.Button):
     
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(SearchModal(mc=self.mc, source=self.source, mmusic=self.view))
+
+
+
+class EnqueueTracksButton(discord.ui.Button):
+    def __init__(self, mc: MikoCore, tracks: list[mafic.Track], source: dict):
+        self.mc = mc
+        self.source = source
+        self.tracks = tracks
+        super().__init__(
+            style=discord.ButtonStyle.green,
+            label=f"Add {len(tracks):,} tracks to queue",
+            emoji=None,
+            custom_id="enqueue_tracks",
+            row=3,
+            disabled=False
+        )
+        
+    
+    
+    async def callback(self, interaction: discord.Interaction) -> None:
+        try: await interaction.response.edit_message()
+        except: pass
+        self.view.player = (interaction.guild.voice_client)
+        
+        if self.custom_id == "shuffle_tracks":
+            import random
+            random.shuffle(self.tracks)
+        
+        await self.view.player.enqueue(
+            mc=self.mc,
+            source=self.source['emoji'] if self.source['emoji'] is not None else SOURCES[self.tracks[0].source]['emoji'],
+            tracks=self.tracks
+        )
+        
+        self.view.clear_items()
+        self.view.add_source_buttons()
+        await self.view.notify_enqueued(self.tracks, self.source)
 
 
 
@@ -191,7 +295,7 @@ class SearchModal(discord.ui.Modal):
             channel = interaction.user.voice.channel
             await channel.connect(cls=MikoPlayer, self_deaf=True)
         
-        player: MikoPlayer = (
+        self.mmusic.player = (
             interaction.guild.voice_client
         )
         
@@ -202,18 +306,55 @@ class SearchModal(discord.ui.Modal):
             case "YouTube Music": search_type = SearchType.YOUTUBE_MUSIC
             case _: search_type = SearchType.YOUTUBE
         
-        tracks = await player.fetch_tracks(self.query.value, search_type=search_type)
+        await self.mmusic.msg.edit(content=self.mc.tunables('LOADING_EMOJI'), embed=None, view=None)
         
-        if isinstance(tracks, Playlist): tracks = tracks.tracks
-        if len(tracks) == 1: await player.enqueue(
-            mc=self.mc,
-            source=self.source if self.source['emoji'] is not None else SOURCES[tracks[0].source],
-            tracks=tracks
-        )
-        else: await self.mmusic.prompt_tracks(
-            tracks,
-            self.source if self.source['emoji'] is not None else SOURCES[tracks[0].source]
-        )
+        tracks = await self.mmusic.player.fetch_tracks(self.query.value, search_type=search_type)
+        
+        if isinstance(tracks, Playlist): all_tracks = tracks.tracks
+        else: all_tracks = tracks
+
+
+        # TODO fix bug that causes source to be incorrect when
+        # pasting a link into any search other than URL
+
+
+        ########################################
+        # Determine source
+        if self.source['emoji'] is not None: __source = self.source
+        else: __source = SOURCES[all_tracks[0].source]
+        
+        # Correct wavelink source recognition via URL
+        if __source == SOURCES["youtube"]:
+            if "music.youtube.com" in self.query.value:
+                __source = SOURCES["youtubemusic"]
+        ########################################
+
+        
+        if len(all_tracks) == 1:
+            await self.mmusic.player.enqueue(
+                mc=self.mc,
+                source=__source['emoji'],
+                tracks=all_tracks
+            )
+            self.mmusic.clear_items()
+            self.mmusic.add_source_buttons()
+            await self.mmusic.notify_enqueued(all_tracks, __source)
+            
+        elif len(all_tracks) == 0:
+            await self.mmusic.msg.edit(
+                embed=discord.Embed(
+                    title="No results found",
+                    color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
+                    description=(
+                        f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
+                        f"No tracks found for **`{self.query.value}`**."
+                    )
+                ),
+                content=None,
+                view=self.mmusic
+            )
+            
+        else: await self.mmusic.prompt_tracks(self.query.value, tracks, __source)
 
 
 
@@ -258,25 +399,17 @@ class TrackSelectDropdown(discord.ui.Select):
             channel = interaction.user.voice.channel
             await channel.connect(cls=MikoPlayer, self_deaf=True)
         
-        player: MikoPlayer = (
+        self.view.player = (
             interaction.guild.voice_client
         )
         
-        await player.enqueue(
+        await self.view.player.enqueue(
             mc=self.view.mc,
             source=self.source['emoji'] if self.source['emoji'] is not None else SOURCES[self.tracks[int(self.values[0])].source]['emoji'],
             tracks=self.tracks[int(self.values[0]) - 1]
         )
         
         self.view.clear_items()
-        emoji = self.source['emoji'] if self.source['emoji'] is not None else SOURCES[self.tracks[int(self.values[0])].source]['emoji']
-        msg = await interaction.original_response()
-        await msg.edit(
-            content=(
-                f"Added {emoji} **`{self.tracks[int(self.values[0])]}`** by **`{self.tracks[int(self.values[0])].author}`** to queue. "
-                # f"View the active player in {self.view.mc.guild.music_channel.mention}."
-            ),
-            embed=None,
-            view=self,
-        )
+        self.view.add_source_buttons()
+        await self.view.notify_enqueued([self.tracks[int(self.values[0]) - 1]], self.source)
         

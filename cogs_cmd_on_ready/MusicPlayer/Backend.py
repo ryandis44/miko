@@ -1,3 +1,10 @@
+'''
+Miko Music 3.0
+
+File responsible for all server-side UI elements of music player
+'''
+
+
 import asyncio
 import discord
 import logging
@@ -6,21 +13,26 @@ import time
 
 from Database.MikoCore import MikoCore
 from discord.ext.commands import Bot
-from misc.misc import time_elapsed
+from misc.misc import time_elapsed, sanitize_track_name
 from typing import List, Dict, Union
 LOGGER = logging.getLogger()
 
 class MikoPlayer(mafic.Player):
     def __init__(self, client: Bot, channel: discord.VoiceChannel) -> None:
         super().__init__(client, channel)
-        self.client = client
-        self.channel = channel
+        self.client: Bot = client
+        self.channel: discord.VoiceChannel = channel
+        self.mc = MikoCore()
+        self.msg: discord.Message = None
+        self.__last_reposition: int = 0
+        self.__lock = asyncio.Lock() # to prevent multiple players being sent at once
         
-        # a list of dictionaries containing a MikoCore object and a mafic.Track object
+        # a list of dictionaries containing a MikoCore object, a source dict, and a mafic.Track object
         self.queue: List[Dict[str, Union[MikoCore, dict, mafic.Track]]] = []
-        self.persistent_player = PersistentPlayer(client=client, channel=channel, player=self)
         
         self.currently_playing = dict[Union[MikoCore, dict, mafic.Track]]
+        
+        self.volume: int = 75
     
     
     
@@ -30,8 +42,31 @@ class MikoPlayer(mafic.Player):
     
     async def play(self, data: Dict[str, Union[MikoCore, dict, mafic.Track]]) -> None:
         await super().play(data['track'])
+        await super().set_volume(self.volume)
+        data['start_time'] = int(time.time())
+        data['paused_at'] = 0
+        data['total_pause_time'] = 0
         self.currently_playing = data
-        await self.persistent_player.ainit()
+        await self.heartbeat()
+    
+    
+    
+    async def set_volume(self, volume: int) -> None:
+        self.volume = volume
+        await super().set_volume(volume)
+        await self.heartbeat()
+    
+    
+    
+    async def toggle_pause(self) -> None:
+        
+        if not self.paused:
+            self.currently_playing['paused_at'] = int(time.time()) # type: ignore
+        else:
+            self.currently_playing['total_pause_time'] += int(time.time()) - self.currently_playing['paused_at'] # type: ignore
+        
+        await super().pause(not self.paused)
+        await self.heartbeat()
     
     
     
@@ -56,97 +91,278 @@ class MikoPlayer(mafic.Player):
             
             # If the player is currently playing something, add the track to the queue
             else:
-                self.queue.append([{
+                if len(self.queue) >= mc.tunables('MUSIC_PLAYER_QUEUE_CAPACITY'): break
+                self.queue.append({
                     'user': mc,
                     'source': source,
                     'track': track
-                }])
+                })
+        
+        ########################################
+        
+        # Notify music channel of enqueued tracks
+        try:
+            if len(tracks) == 1:
+                __title = sanitize_track_name(tracks[0].title)
+                __author = sanitize_track_name(tracks[0].author)
+                
+                await mc.guild.music_channel.send(
+                    content=f"🎵 {mc.user.user.mention} added {source} [{__title}]({tracks[0].uri}) by **`{__author}`** to the queue.",
+                    allowed_mentions=discord.AllowedMentions(users=False),
+                    suppress_embeds=True
+                )
+            else:
+                await mc.guild.music_channel.send(
+                    content=f"🎶 {mc.user.user.mention} added {source} **`{len(tracks)} tracks`** to the queue.",
+                    allowed_mentions=discord.AllowedMentions(users=False),
+                    suppress_embeds=True
+                )
+        except Exception as e: LOGGER.error(f"Failed to notify music channel of enqueued tracks: {e}")
+        
+        ########################################
+        
+        await self.heartbeat()
     
     
     
     async def stop(self) -> None:
         self.queue.clear()
         await super().stop()
-        await super().disconnect()
-
-
-
-async def track_end(event: mafic.TrackEndEvent) -> None:
-    assert isinstance(event.player, MikoPlayer)
-    if len(event.player.queue) > 0: await event.player.play(event.player.queue.pop(0))
-    else: await event.player.disconnect()
-
-
-
-class PersistentPlayer(discord.ui.View):
-    def __init__(self, client: Bot, channel: discord.VoiceChannel, player: MikoPlayer) -> None:
-        self.mc = MikoCore()
-        super().__init__(timeout=None)
-        self.client = client
-        self.player = player
-        self.channel = channel
-        self.msg: discord.Message = None
-        self.__last_reposition: int = 0
-    
-    
-    
-    async def ainit(self) -> None:
-        await self.mc.guild_ainit(client=self.client, guild=self.channel.guild)
-        await self.reposition()
+        await super().disconnect(force=True)
         
+        try:
+            await self.msg.edit(
+                content="Player stopped and queue cleared.",
+                embed=None,
+                view=None
+            )
+        except: pass
+    
+    
+    
+    # Determines whether embed should be deleted and resent or
+    # the current message should be edited
+    async def heartbeat(self, reposition: bool = False) -> None:
         
+        # Lock to prevent multiple players being sent at once
+        async with self.__lock:
+            try: self.mc.guild.profile_text
+            except: await self.mc.guild_ainit(client=self.client, guild=self.channel.guild)
+            
+            if reposition:
+                if self.__last_reposition + 5 <= int(time.time()): await asyncio.sleep(5)
+                await self.reposition()
+            
+            else:
+                try: await self.update_message()
+                except: await self.reposition()
+        
+    
+    
+    async def update_message(self) -> None:
+        await self.msg.edit(
+            content=None,
+            embed=self.__player_embed(),
+            view=PlayerButtons(player=self)
+        )
+    
+    
     
     async def reposition(self) -> None:
-        
-        # Only reposition player once every 5 seconds to avoid rate limit
-        if self.__last_reposition + 5 >= int(time.time()):
-            await asyncio.sleep(5)
         
         if self.msg is not None:
             try: await self.msg.delete()
             except Exception as e: LOGGER.error(f"Failed to delete persistent player message: {e}")
             
+            
+        self.__last_reposition = int(time.time())
         self.msg = await self.mc.guild.music_channel.send(
             content=None,
-            embed=await self.__player_embed(),
-            view=self
+            embed=self.__player_embed(),
+            view=PlayerButtons(player=self)
         )
-        self.__last_reposition = int(time.time())
     
     
     
-    async def __player_embed(self) -> discord.Embed:
+    def __player_embed(self) -> discord.Embed:
         temp = []
         
+        if self.paused and self.current is not None:
+            temp.append(
+                "# :pause_button: Playback is paused. Press the play button to resume.\n"
+            )
+        
+        ########################################################
+        
         # Currently playing section
-        dur = time_elapsed(int(self.player.current.length / 1000), ':')
-        temp.append(
-            f"\u200b \u200b├─ Title: **`{self.player.currently_playing['track'].title}`**\n" # type: ignore
-            f"\u200b \u200b├─ By: **`{self.player.currently_playing['track'].author}`**\n" # type: ignore
-            f"\u200b \u200b├─ Timestamp: **`0 / {dur}`**\n"
-            f"\u200b \u200b└─ Source: [WIP]\n"
-        )
+        dur = time_elapsed(int(self.current.length / 1000), ':')
+        __title = self.currently_playing['track'].title # type: ignore
+        __author = self.currently_playing['track'].author # type: ignore
+        if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+        if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
         
         temp.append(
-            f"{self.player.currently_playing['user'].user.first_join}" # type: ignore
+            f"> {self.currently_playing['source']} [{sanitize_track_name(__title)}]({self.currently_playing['track'].uri}) by **`{sanitize_track_name(__author)}`**\n" # type: ignore
         )
+        if not self.paused and self.current is not None:
+            temp.append(
+                f"> Started <t:{self.currently_playing['start_time'] + self.currently_playing['total_pause_time']}:R> (`{dur} total`)\n" # type: ignore
+            )
+        else:
+            temp.append(
+                f"> Playback paused (track length: `{dur}`)\n" # type: ignore
+            )
+        
+        temp.append(
+            f"> Queued by {self.currently_playing['user'].user.user.mention}\n\n" # type: ignore
+        )
+        
+        ########################################################
         
         # Queue section
-        # if len(self.player.queue) == 0:
-        #     temp.append("\n# Queue is empty.")
-        # else:
-        #     total_milliseconds = 0
-        #     for track in self.player.queue:
-        #         total_milliseconds += track['track'].length
+        if len(self.queue) == 0:
+            temp.append(f"Queue is empty. Queue more with `{self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')}`\n")
+        else:
+            __queue = []
+            total_milliseconds = 0
+            i = 0
+            for track in self.queue:
+                total_milliseconds += track['track'].length
+                if i < self.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS'):
+                    __title = track['track'].title
+                    __author = track['track'].author
+                    if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+                    if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+                    __queue.append(
+                        f"{track['source']} [{sanitize_track_name(__title)}]({track['track'].uri}) by **`{sanitize_track_name(__author)}`**\n"
+                    )
+                i+=1
+            
+            len_queue = len(self.queue)
+            temp.append(
+                "__Up next:__\n"
+                f"Queue length: **`{len_queue:,}`** track{'s' if len_queue > 1 else ''}\n"# • Total duration: **`{time_elapsed(int(total_milliseconds / 1000), ':')}`**\n"
+                f"{''.join(__queue)}\n"
+            )
+            if len_queue > self.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS'):
+                temp.append(
+                    f"...and **`{len_queue - self.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS'):,}`** more\n"
+                )
+            
+        ########################################################
+            
         
         embed = discord.Embed(
-            title=":musical_note: Now Playing",
             description=''.join(temp),
             color=self.mc.tunables('GLOBAL_EMBED_COLOR')
         )
         
-        '''
-        Set embed.set_author et al.
-        '''
+        embed.set_author(
+            name="Now Playing",
+            icon_url=self.currently_playing['user'].user.user.avatar # type: ignore
+        )
         
         return embed
+
+
+
+async def track_end(event: mafic.TrackEndEvent) -> None:
+    assert isinstance(event.player, MikoPlayer)
+    if len(event.player.queue) > 0:
+        await event.player.play(event.player.queue.pop(0))
+    else: await event.player.stop()
+
+
+
+class PlayerButtons(discord.ui.View):
+    def __init__(self, player: MikoPlayer) -> None:
+        super().__init__(timeout=None)
+        self.player = player
+        
+        # self.clear_items()
+        self.add_item(VolumeDropdown(player=player))
+        self.__button_presence()
+
+
+
+    def __button_presence(self):
+        pause_play = [x for x in self.children if x.custom_id=="pause_play"][0]
+        stop = [x for x in self.children if x.custom_id=="stop_song"][0]
+        next = [x for x in self.children if x.custom_id=="next_song"][0]
+        vol = [x for x in self.children if x.custom_id=="volume"][0]
+
+        stop.disabled = False
+        pause_play.emoji = '⏸️' if not self.player.paused else '▶️'
+        next.disabled = True if self.player.queue == [] else False
+        vol.disabled = False
+    
+
+
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏹️', custom_id='stop_song', disabled=False, row=2)
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        await interaction.response.edit_message()
+        await self.player.stop()
+
+
+
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏸️', custom_id='pause_play', disabled=False, row=2)
+    async def pause_resume(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        await interaction.response.edit_message()
+        await self.player.toggle_pause()
+    
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏭️', custom_id='next_song', disabled=True, row=2)
+    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        await interaction.response.edit_message()
+        await self.player.skip()
+    
+    
+    
+    # @discord.ui.button(style=discord.ButtonStyle.gray, emoji='➕', custom_id='enqueue', disabled=False, row=2)
+    # async def enqueue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    #     await interaction.response.edit_message()
+    #     await Miko
+    
+    
+    
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        mc = MikoCore()
+        await mc.user_ainit(user=interaction.user, client=self.player.client)
+        if mc.user.bot_permission_level < 1: return False
+        
+        if interaction.user.voice is None or interaction.user.voice.channel.id != \
+            interaction.guild.voice_client.channel.id:
+                await interaction.response.send_message(
+                    content=f"You must be in {interaction.guild.voice_client.channel.mention} to use this.",
+                    ephemeral=True
+                )
+                return False
+        return True
+        
+
+
+class VolumeDropdown(discord.ui.Select):
+    def __init__(self, player: MikoPlayer) -> None:
+        self.player = player
+        red_warning = self.player.client.get_emoji(1074463168526561311)
+        
+        super().__init__(placeholder='Select a volume level...', custom_id="volume", options=[
+            discord.SelectOption(label='25%', value=25, emoji='🔈', default=player.volume==25),
+            discord.SelectOption(label='50%', value=50, emoji='🔉', default=player.volume==50),
+            discord.SelectOption(label='75% (Default)', value=75, emoji='🔉', default=player.volume==75),
+            discord.SelectOption(label='100%', value=100, emoji='🔊', default=player.volume==100),
+            discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
+            discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
+            discord.SelectOption(label='400%. Most audio is distorted', value=400, emoji='⚠', default=player.volume==400),
+            discord.SelectOption(label='500%. Everything is distorted', value=500, emoji='⚠', default=player.volume==500),
+            discord.SelectOption(label='1,000%. Why?', value=1000, emoji=red_warning, default=player.volume==1000),
+        ])
+        self.player = player
+    
+    
+    
+    async def callback(self, interaction: discord.Interaction) -> None:
+        try: await interaction.response.edit_message()
+        except: pass
+        await self.player.set_volume(int(self.values[0]))
