@@ -232,7 +232,7 @@ class MikoPlayer(mafic.Player):
         
         # Queue section
         if len(self.queue) == 0:
-            temp.append(f"Queue is empty. Queue more with `{self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')}`\n")
+            temp.append(f"Queue is empty. Queue more with {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')}\n")
         else:
             __queue = []
             total_milliseconds = 0
