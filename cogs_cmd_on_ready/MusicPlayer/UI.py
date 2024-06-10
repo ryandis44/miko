@@ -163,7 +163,7 @@ class MikoMusic(discord.ui.View):
                 f"{emojis_1to10(i-1)} {source['emoji']} [{title}]({track.uri}) by **`{author}`** 『`{dur}`』\n"
             )
             
-            if i >= 10: break
+            if i >= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): break
         
         self.clear_items()
         self.add_source_buttons()

@@ -382,8 +382,7 @@ class PlayerButtons(discord.ui.View):
     
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji='📃', custom_id='full_queue', disabled=True, row=2)
     async def full_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        await interaction.response.edit_message()
-        await FullQueue(mc=self.player.mc)
+        await FullQueue(player=self.player).ainit(interaction=interaction)
     
     
     
@@ -432,21 +431,150 @@ class VolumeDropdown(discord.ui.Select):
 
 
 class FullQueue(discord.ui.View):
-    def __init__(self, mc: MikoCore) -> None:
-        super().__init__(timeout=mc.tunables('MUSIC_VIEW_TIMEOUT'))
-        self.mc = mc
+    def __init__(self, player: MikoPlayer) -> None:
+        self.mc = player.mc
+        self.msg: discord.Message = None
+        self.offset = 0
+        self.player = player
+        super().__init__(timeout=self.mc.tunables('MUSIC_VIEW_TIMEOUT'))
+        self.button_presence()
     
     
     
     async def on_timeout(self) -> None:
-        pass
+        try: await self.msg.delete()
+        except: pass
     
     
     
-    async def ainit(self) -> None:
-        pass
+    async def ainit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(
+            content=self.mc.tunables('LOADING_EMOJI'),
+            ephemeral=True
+        )
+        self.msg = await interaction.original_response()
+        await self.response()
+        
+    
+    
+    def button_presence(self) -> None:
+        front = [x for x in self.children if x.custom_id=="front"][0]
+        back = [x for x in self.children if x.custom_id=="back"][0]
+        next = [x for x in self.children if x.custom_id=="next"][0]
+        end = [x for x in self.children if x.custom_id=="end"][0]
+
+        queue_len = len(self.player.queue)
+        
+        if self.offset > 0:
+            front.disabled = False
+            back.disabled = False
+        else:
+            front.disabled = True
+            back.disabled = True
+        
+        if queue_len > self.offset + self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'):
+            next.disabled = False
+            end.disabled = False
+        else:
+            next.disabled = True
+            end.disabled = True
+    
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏮️', custom_id='front', disabled=True)
+    async def front(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        self.offset = 0
+        await interaction.response.edit_message()
+        await self.response()
+    
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='◀️', custom_id='back', disabled=True)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        # If 8 <= 10
+        if self.offset <= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): self.offset = 0
+        # If 8 > 8 - 10
+        elif self.offset > self.offset - self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): self.offset -= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')
+        else: return
+        await interaction.response.edit_message()
+        await self.response()
+    
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='▶️', custom_id='next', disabled=True)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        queue_len = len(self.player.queue)
+        # If 17 > 0 + 20 == False
+        if queue_len > self.offset + (self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS') * 2): self.offset += self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')
+        # If 17 <= 0 + 20 == True
+        elif queue_len <= self.offset + (self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS') * 2): self.offset = queue_len - self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')
+        else: return
+        await interaction.response.edit_message()
+        await self.response()
+    
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏭️', custom_id='end', disabled=True)
+    async def end(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        self.offset = len(self.player.queue) - self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')
+        await interaction.response.edit_message()
+        await self.response()
+    
+    
+    
+    async def response(self) -> None:
+        self.button_presence()
+        await self.msg.edit(
+            content=None,
+            embed=self.__embed(),
+            view=self
+        )
+    
     
     
     
     def __embed(self) -> discord.Embed:
-        pass
+        temp = []
+        
+        temp.append(                        
+            f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
+            ""
+            "__Full Queue__:\n"
+        )
+        
+        i = 0
+        while True:
+            __title = self.player.queue[i + self.offset]['track'].title
+            __author = self.player.queue[i + self.offset]['track'].author
+            if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            
+            temp.append(
+                f"`{i + self.offset + 1}.` {self.player.queue[i + self.offset]['source']} "
+                f"[{__title}]({self.player.queue[i + self.offset]['track'].uri}) "
+                f"by **`{__author}`** • {self.player.queue[i + self.offset]['user'].user.user.mention}\n"
+            )
+        
+            i+=1
+            if i >= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): break
+        
+        embed = discord.Embed(
+            description=''.join(temp),
+            color=self.mc.tunables('GLOBAL_EMBED_COLOR')
+        )
+        
+        queue_len = len(self.player.queue)
+        if i > self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'):
+            embed.set_footer(
+                text=f"Showing tracks {self.offset + 1:,} - {self.offset + self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'):,} of {queue_len:,}"
+            )
+        elif len(self.player.queue) > 0:
+            embed.set_footer(
+                text=f"Showing tracks {self.offset + 1:,} - {queue_len:,} of {queue_len:,}"
+            )
+        else:
+            embed.set_footer(
+                text="Showing tracks 0 - 0 of 0"
+            )
+        
+        return embed
