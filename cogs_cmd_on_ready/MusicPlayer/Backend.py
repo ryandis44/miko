@@ -319,6 +319,9 @@ class MikoPlayer(mafic.Player):
             icon_url=self.currently_playing['user'].user.user.avatar # type: ignore
         )
         
+        try: embed.set_thumbnail(url=self.currently_playing['track'].artwork_url) # type: ignore
+        except: embed.set_thumbnail(url=None)
+        
         return embed
 
 
