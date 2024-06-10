@@ -78,7 +78,15 @@ def time_elapsed(seconds, format):
       
     match format:
         case ":":
-            return "%d:%02d:%02d" % (hours, minutes, seconds)
+            time_parts = []
+            if days > 0:
+                time_parts.append(f"{days}d")
+            if hours > 0 or days > 0:
+                time_parts.append(f"{hours}h")
+            if minutes > 0 or hours > 0:
+                time_parts.append(f"{minutes}m")
+            time_parts.append(f"{seconds}s")
+            return " ".join(time_parts)
         case "h":
             temp = []
             

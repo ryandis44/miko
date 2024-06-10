@@ -547,22 +547,21 @@ class FullQueue(discord.ui.View):
         
         temp.append(                        
             f"> **This embed will**\n> **expire <t:{int(time.time()) + self.mc.tunables('MUSIC_VIEW_TIMEOUT')}:R>.**\n\n"
-            ""
-            "__Full Queue__:\n"
         )
         
-        # total_milliseconds = 0
+        total_milliseconds = 0
+        for track in self.player.queue: total_milliseconds += track['track'].length
         queue_len = len(self.player.queue)
+        __queue = []
         i = 0
         while True:
             if i >= queue_len: break
-            # total_milliseconds += self.player.queue[i + self.offset]['track'].length
             __title = self.player.queue[i + self.offset]['track'].title
             __author = self.player.queue[i + self.offset]['track'].author
             if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
             if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
             
-            temp.append(
+            __queue.append(
                 f"`{i + self.offset + 1}.` {self.player.queue[i + self.offset]['source']} "
                 f"[{__title}]({self.player.queue[i + self.offset]['track'].uri}) "
                 f"by **`{__author}`** • {self.player.queue[i + self.offset]['user'].user.user.mention}\n"
@@ -570,6 +569,12 @@ class FullQueue(discord.ui.View):
         
             i+=1
             if i >= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): break
+        
+        temp.append(
+            f"Queue duration: `{time_elapsed(int(total_milliseconds / 1000), ':')}`\n\n"
+            "__Full Queue__:\n"
+            f"{''.join(__queue)}\n"
+        )
         
         embed = discord.Embed(
             description=''.join(temp),
