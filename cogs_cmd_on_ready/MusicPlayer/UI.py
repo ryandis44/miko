@@ -178,7 +178,7 @@ class MikoMusic(discord.ui.View):
             __shuffle_button.row = 4
             self.add_item(__shuffle_button)
                 
-        else: self.add_item(TrackSelectDropdown(tracks=tracks, source=source)) # for single track
+        else: self.add_item(TrackSelectDropdown(tracks=tracks, source=source, mc=self.mc)) # for single track
         
         embed = discord.Embed(
             title='Search Results',
@@ -382,9 +382,10 @@ class SearchModal(discord.ui.Modal):
 
 
 class TrackSelectDropdown(discord.ui.Select):
-    def __init__(self, tracks: list[mafic.Track], source) -> None:
+    def __init__(self, tracks: list[mafic.Track], source, mc: MikoCore) -> None:
         self.tracks = tracks
         self.source = source
+        self.mc = mc
         
         options = []
         i = 0
@@ -402,7 +403,7 @@ class TrackSelectDropdown(discord.ui.Select):
                     emoji=emojis_1to10(i-1)
                 )
             )
-            if i >= 10: break
+            if i >= self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'): break
         
         super().__init__(
             placeholder="Select a track",
