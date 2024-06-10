@@ -64,10 +64,9 @@ SOURCES = {
 
 class MikoMusic(discord.ui.View):
     
-    def __init__(self, mc: MikoCore, msg: discord.Message):
+    def __init__(self, mc: MikoCore, msg: discord.Message = None, interaction: discord.Interaction = None):
         self.mc = mc
         self.msg = msg
-        self.__enqueued: bool = False
         self.player: MikoPlayer = None
         super().__init__(timeout=mc.tunables('MUSIC_VIEW_TIMEOUT'))
         
@@ -137,11 +136,11 @@ class MikoMusic(discord.ui.View):
         if isinstance(tracks, Playlist):
             __playlist_name = sanitize_track_name(tracks.name)
             if len(__playlist_name) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __playlist_name = f"{__playlist_name[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
-            temp.append(f"**Top 10 tracks from** `{__playlist_name}`\n")
+            temp.append(f"**Top {self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')} tracks from** `{__playlist_name}`\n")
         else:
             __query = sanitize_track_name(query)
             if len(query) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __query = f"{__query[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
-            temp.append(f"**Top 10 tracks for** `{__query}`\n")
+            temp.append(f"**Top {self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS')} tracks for** `{__query}`\n")
         
         temp.append(
             "`[`, `]`, `*`, `_` _removed from titles for formatting purposes_\n"
@@ -200,8 +199,8 @@ class MikoMusic(discord.ui.View):
         else:
             __title = sanitize_track_name(all_tracks[0].title)
             __author = sanitize_track_name(all_tracks[0].author)
-            if len(__title) > 103: __title = f"{__title[:100]}..."
-            if len(__author) > 103: __author = f"{__author[:100]}..."
+            if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
+            if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
             temp.append(
                 f"Added {source['emoji']} [{__title}]({all_tracks[0].uri}) by **`{__author}`** to queue\n"
             )

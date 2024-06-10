@@ -39,10 +39,14 @@ class MikoPlayer(mafic.Player):
     async def skip(self, mc: MikoCore) -> None:
         
         try:
+            __title = sanitize_track_name(self.currently_playing['track'].title) # type: ignore
+            __author = sanitize_track_name(self.currently_playing['track'].author) # type: ignore
+            if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH')]}..."
+            if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH')]}..."
             await self.mc.guild.music_channel.send(
                 content=(
                     f"‼️ {mc.user.user.mention} skipped {self.currently_playing['source']} " # type: ignore
-                    f"[{self.currently_playing['track'].title}]({self.currently_playing['track'].uri}) by **`{self.currently_playing['track'].author}`**" # type: ignore
+                    f"[{__title}]({self.currently_playing['track'].uri}) by **`{__author}`**" # type: ignore
                 ),
                 allowed_mentions=discord.AllowedMentions(users=False),
                 suppress_embeds=True
@@ -118,8 +122,8 @@ class MikoPlayer(mafic.Player):
             if len(tracks) == 1:
                 __title = sanitize_track_name(tracks[0].title)
                 __author = sanitize_track_name(tracks[0].author)
-                if len(__title) > 103: __title = f"{__title[:100]}..."
-                if len(__author) > 103: __author = f"{__author[:100]}..."
+                if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH')]}..."
+                if len(__author) > self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH') + 3: __author = f"{__author[:self.mc.tunables('MUSIC_PLAYER_MAX_LONG_STRING_LENGTH')]}..."
                 
                 await mc.guild.music_channel.send(
                     content=f"🎵 {mc.user.user.mention} added {source} [{__title}]({tracks[0].uri}) by **`{__author}`** to the queue.",
@@ -245,7 +249,12 @@ class MikoPlayer(mafic.Player):
         ########################################################
         
         # Currently playing section
-        dur = time_elapsed(int(self.current.length / 1000), ':')
+        if self.current.stream:
+            dur = "`🔴 LIVE`"
+        else:
+            dur = time_elapsed(int(self.current.length / 1000), ':')
+            dur = f"`{dur} total`"
+            
         __title = self.currently_playing['track'].title # type: ignore
         __author = self.currently_playing['track'].author # type: ignore
         if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
@@ -256,11 +265,11 @@ class MikoPlayer(mafic.Player):
         )
         if not self.paused and self.current is not None:
             temp.append(
-                f"> Started <t:{self.currently_playing['start_time'] + self.currently_playing['total_pause_time']}:R> (`{dur} total`)\n" # type: ignore
+                f"> Started <t:{self.currently_playing['start_time'] + self.currently_playing['total_pause_time']}:R> ({dur})\n" # type: ignore
             )
         else:
             temp.append(
-                f"> Playback paused (track length: `{dur}`)\n" # type: ignore
+                f"> Playback paused (track length: {dur})\n" # type: ignore
             )
         
         temp.append(
@@ -274,10 +283,8 @@ class MikoPlayer(mafic.Player):
             temp.append(f"Queue is empty. Queue more with {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')}\n")
         else:
             __queue = []
-            total_milliseconds = 0
             i = 0
             for track in self.queue:
-                total_milliseconds += track['track'].length
                 if i < self.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS'):
                     __title = track['track'].title
                     __author = track['track'].author
@@ -380,7 +387,7 @@ class PlayerButtons(discord.ui.View):
     
     
     
-    @discord.ui.button(style=discord.ButtonStyle.gray, emoji='📃', custom_id='full_queue', disabled=True, row=2)
+    @discord.ui.button(style=discord.ButtonStyle.green, emoji=None, custom_id='full_queue', disabled=True, row=2, label="View Full Queue")
     async def full_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await FullQueue(player=self.player).ainit(interaction=interaction)
     
@@ -532,7 +539,6 @@ class FullQueue(discord.ui.View):
     
     
     
-    
     def __embed(self) -> discord.Embed:
         temp = []
         
@@ -542,8 +548,12 @@ class FullQueue(discord.ui.View):
             "__Full Queue__:\n"
         )
         
+        # total_milliseconds = 0
+        queue_len = len(self.player.queue)
         i = 0
         while True:
+            if i >= queue_len: break
+            # total_milliseconds += self.player.queue[i + self.offset]['track'].length
             __title = self.player.queue[i + self.offset]['track'].title
             __author = self.player.queue[i + self.offset]['track'].author
             if len(__title) > self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH') + 3: __title = f"{__title[:self.mc.tunables('MUSIC_PLAYER_MAX_STRING_LENGTH')]}..."
@@ -563,7 +573,6 @@ class FullQueue(discord.ui.View):
             color=self.mc.tunables('GLOBAL_EMBED_COLOR')
         )
         
-        queue_len = len(self.player.queue)
         if i > self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'):
             embed.set_footer(
                 text=f"Showing tracks {self.offset + 1:,} - {self.offset + self.mc.tunables('MUSIC_PLAYER_MAX_VIEWABLE_OPTIONS'):,} of {queue_len:,}"

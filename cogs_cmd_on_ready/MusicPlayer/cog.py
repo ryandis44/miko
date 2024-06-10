@@ -16,7 +16,6 @@ from cogs_cmd_on_ready.MusicPlayer.UI import MikoMusic
 from Database.MikoCore import MikoCore
 from discord import app_commands
 from discord.ext import commands
-from typing import cast
 
 class MusicPlayer(commands.Cog):
     def __init__(self, client):
