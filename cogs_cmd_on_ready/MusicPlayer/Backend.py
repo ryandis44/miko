@@ -423,11 +423,11 @@ class VolumeDropdown(discord.ui.Select):
             discord.SelectOption(label='50%', value=50, emoji='🔉', default=player.volume==50),
             discord.SelectOption(label='75% (Default)', value=75, emoji='🔉', default=player.volume==75),
             discord.SelectOption(label='100%', value=100, emoji='🔊', default=player.volume==100),
-            discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
-            discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
-            discord.SelectOption(label='400%. Most audio is distorted', value=400, emoji='⚠', default=player.volume==400),
-            discord.SelectOption(label='500%. Everything is distorted', value=500, emoji='⚠', default=player.volume==500),
-            discord.SelectOption(label='1,000%. Why?', value=1000, emoji=red_warning, default=player.volume==1000),
+            # discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
+            # discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
+            # discord.SelectOption(label='400%. Most audio is distorted', value=400, emoji='⚠', default=player.volume==400),
+            # discord.SelectOption(label='500%. Everything is distorted', value=500, emoji='⚠', default=player.volume==500),
+            # discord.SelectOption(label='1,000%. Why?', value=1000, emoji=red_warning, default=player.volume==1000),
         ])
         self.player = player
     
