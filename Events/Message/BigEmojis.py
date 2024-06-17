@@ -18,6 +18,12 @@ async def big_emojis(mc: MikoCore) -> bool:
         if mc.message.message.content.startswith("<") and mc.message.message.content[1] not in ['@', '#', '/', 't']:
             try:
                 auth = None
+                
+                # Check if the message is a reply
+                # If reply, get the author of the message
+                # If replying to a previous BigEmoji message,
+                # grab the name of the author of the previous message
+                # from the previous message's embed author
                 if mc.message.message.reference is not None:
                     ref = mc.message.message.reference.resolved
                     if ref.author.id == mc.user.client.user.id:
@@ -25,7 +31,10 @@ async def big_emojis(mc: MikoCore) -> bool:
                             embed = ref.embeds[0]
                             auth = embed.author.name.split("→")[0]
                         except: pass
-                    else: auth = mc.user.username
+                    else:
+                        auth = MikoCore()
+                        await auth.user_ainit(user=ref.author, client=mc.user.client)
+                        auth = auth.user.username
 
                 await mc.message.message.delete()
                 e = await __big_emoji_embed(mc, auth)
