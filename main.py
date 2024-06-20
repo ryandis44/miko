@@ -14,7 +14,7 @@ from cogs_cmd_on_ready.MusicPlayer.Backend import track_end
 from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
-from Database.MySQL import connect_pool, VPN_IP # connect to the database
+from Database.MySQL import connect_pool # connect to the database
 from Database.tunables import tunables_init, tunables # tunables used by the bot
 from Events.MemberJoin.Core import caller as on_member_join_caller # core member join event handler
 from Events.Message.Core import caller as on_message_caller # core message event handler
@@ -50,6 +50,7 @@ load_dotenv() # load environment variables from .env file
 
 '''
 Create bot class and define bot intents. These are used to determine what events the bot will receive.
+Additionally setup music player and on_ready event.
 '''
 class Bot(commands.Bot):
     def __init__(self) -> None:

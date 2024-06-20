@@ -29,3 +29,9 @@ class MikoMessage:
     async def ainit(self, message: discord.Message, client: Bot) -> None:
         self.message = message
         self.client = client
+    
+    
+    
+    async def cache_message(self) -> None:
+        pass
+        # Redis JSON

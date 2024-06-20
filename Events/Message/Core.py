@@ -13,6 +13,7 @@ from Events.Message.BigEmojis import big_emojis
 from Events.Message.BruhReact import bruh_react
 from Events.Message.MusicPlayerReposition import reposition_music_player
 from Events.Message.ReplyToMention import reply_to_mention
+from GenerativeAI.GenerativeAI import GenerativeAI
 LOGGER = logging.getLogger()
 
 async def caller(message: discord.Message, client: Bot) -> None:
@@ -38,3 +39,6 @@ async def caller(message: discord.Message, client: Bot) -> None:
     
     try: await bruh_react(mc) # BRUH_REACT_WORDS in tunables
     except Exception as e: LOGGER.error(f"Error in bruh_react: {e}")
+    
+    try: await GenerativeAI(mc).ainit() # generative AI
+    except Exception as e: LOGGER.error(f"Error in GenerativeAI: {e}")
