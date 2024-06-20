@@ -49,7 +49,8 @@ class MikoPlayer(mafic.Player):
                     f"[{__title}]({self.currently_playing['track'].uri}) by **`{__author}`**" # type: ignore
                 ),
                 allowed_mentions=discord.AllowedMentions(users=False),
-                suppress_embeds=True
+                suppress_embeds=True,
+                silent=True
             )
         except Exception as e: LOGGER.error(f"Failed to notify music channel of skipped track: {self.mc.guild.guild} : {e}")
         
@@ -128,13 +129,15 @@ class MikoPlayer(mafic.Player):
                 await mc.guild.music_channel.send(
                     content=f"🎵 {mc.user.user.mention} added {source} [{__title}]({tracks[0].uri}) by **`{__author}`** to the queue.",
                     allowed_mentions=discord.AllowedMentions(users=False),
-                    suppress_embeds=True
+                    suppress_embeds=True,
+                    silent=True
                 )
             else:
                 await mc.guild.music_channel.send(
                     content=f"🎶 {mc.user.user.mention} added {source} **`{len(tracks)} tracks`** to the queue.",
                     allowed_mentions=discord.AllowedMentions(users=False),
-                    suppress_embeds=True
+                    suppress_embeds=True,
+                    silent=True
                 )
         except Exception as e: LOGGER.error(f"Failed to notify music channel of enqueued tracks: {self.mc.guild.guild} : {e}")
         
@@ -233,7 +236,8 @@ class MikoPlayer(mafic.Player):
         self.msg = await self.mc.guild.music_channel.send(
             content=None,
             embed=self.__player_embed(),
-            view=PlayerButtons(player=self)
+            view=PlayerButtons(player=self),
+            silent=True
         )
     
     
