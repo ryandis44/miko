@@ -32,7 +32,7 @@ class MikoPlayer(mafic.Player):
         
         self.currently_playing = dict[Union[MikoCore, dict, mafic.Track]]
         
-        self.volume: int = 75
+        self.volume: int = self.mc.tunables('MUSIC_PLAYER_DEFAULT_VOLUME')
     
     
     
@@ -425,7 +425,7 @@ class VolumeDropdown(discord.ui.Select):
         super().__init__(placeholder='Select a volume level...', custom_id="volume", options=[
             discord.SelectOption(label='25%', value=25, emoji='🔈', default=player.volume==25),
             discord.SelectOption(label='50%', value=50, emoji='🔉', default=player.volume==50),
-            discord.SelectOption(label='75% (Default)', value=75, emoji='🔉', default=player.volume==75),
+            discord.SelectOption(label='75%', value=75, emoji='🔉', default=player.volume==75),
             discord.SelectOption(label='100%', value=100, emoji='🔊', default=player.volume==100),
             # discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
             # discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
