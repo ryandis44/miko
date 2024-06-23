@@ -18,6 +18,7 @@ from Database.MikoCore import MikoCore
 class GenerativeAI:
     def __init__(self, mc: MikoCore) -> None:
         self.mc = mc
+        self.t = discord.ChannelType
     
     
     
@@ -39,6 +40,27 @@ class GenerativeAI:
             or self.mc.message.message.author.system or self.mc.message.message.content.startswith(self.mc.tunables('GENERATIVE_AI_MESSAGE_IGNORE_CHAR')): return
         
         await self.mc.message.cache_message()
+        
+        
+        '''
+        If not a thread and:
+            - Message content is not empty
+            - Message content contains a mention to Miko
+            - Message is not from Miko or the message is referencing a message
+              from Miko
+        '''
+        match self.mc.channel.channel.type:
+            
+            case self.t.text | self.t.voice | self.t.news | self.t.forum | self.t.stage_voice:
+                print("Not Thread")
+            
+            case self.t.public_thread | self.t.private_thread | self.t.news_thread:
+                print("Thread")
+            
+            case _:
+                print("Unknown Channel Type")
+                return
+            
 
         try: api = self.mc.tunables(f'GENERATIVE_AI_MODE_{self.mc.channel.ai_mode}')['api']
         except: api = self.mc.tunables(f'GENERATIVE_AI_MODE_DISABLED')['api']

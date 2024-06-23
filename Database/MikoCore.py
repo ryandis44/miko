@@ -58,7 +58,7 @@ class MikoCore:
     - Initialize MikoUser
     - If the user is a member, initialize MikoGuild
     '''
-    async def user_ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> MikoUser:
+    async def user_ainit(self, user: discord.User|discord.Member, client: Bot, check_exists: bool = True) -> None:
         async with await presence_lock(user):
             await self.user.ainit(user=user, client=client, check_exists=check_exists)
             if self.user.is_member: self.guild: MikoGuild = self.user.guild
@@ -68,12 +68,12 @@ class MikoCore:
     
     
     
-    async def guild_ainit(self, guild: discord.Guild, client: Bot, check_exists: bool = True) -> MikoGuild:
+    async def guild_ainit(self, guild: discord.Guild, client: Bot, check_exists: bool = True) -> None:
         await self.guild.ainit(guild=guild, client=client, check_exists=check_exists)
         
     
     
-    async def channel_ainit(self, channel: discord.TextChannel, client: Bot, check_exists: bool = True) -> MikoTextChannel:
+    async def channel_ainit(self, channel: discord.TextChannel|discord.Thread, client: Bot, check_exists: bool = True) -> None:
         await self.channel.ainit(channel=channel, client=client, check_exists=check_exists)
     
     

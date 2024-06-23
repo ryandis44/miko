@@ -102,15 +102,10 @@ class MikoMessage:
     
     
     async def edit_cached_message(self, payload: discord.RawMessageUpdateEvent) -> None:
-        print("editing cached msg")
         self.payload = payload
 
         m = await r.get(key=f"m:{self.payload.message_id}", type="JSON")
-        print(m)
-        if m is None:
-            print(f"m is None: {self.payload.message_id}")
-            return
-        print("1")
+        if m is None: return
         # Update message content
         await r.set(
             key=f"m:{self.payload.message_id}",
@@ -118,7 +113,6 @@ class MikoMessage:
             path="$.content",
             value=self.payload.data['content']
         )
-        print('2')
         # Update attachments
         data = await self.__get_attachments()
         await r.set(
@@ -130,7 +124,6 @@ class MikoMessage:
                 'data': data
             }] if data != [] else []
         )
-        print('3')
         # Update embed description
         embeds = []
         if len(self.payload.data['embeds']) > 0:
@@ -145,7 +138,6 @@ class MikoMessage:
             path="$.embeds",
             value=embeds
         )
-        print('4')
 
 
 

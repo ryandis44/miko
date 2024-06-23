@@ -94,7 +94,9 @@ class RedisCache:
             match type:
                 case "STRING": return await connection.get(key)
                 case "JSON": return await connection.json().get(key)
-        except: return None
+        except Exception as e:
+            LOGGER.error(e)
+            return None
 
     async def search(self, query: str, type: str, index: str, offset: int = 0, limit: int = 10) -> dict|list|str|None:
         try:

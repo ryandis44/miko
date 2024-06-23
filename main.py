@@ -15,6 +15,7 @@ from discord.ext import commands
 from dotenv import load_dotenv # load environment variables from .env file
 from dpyConsole import Console # console used for debugging, logging, and shutdown via control panel
 from Database.MySQL import connect_pool # connect to the database
+from Database.Redis import connect_redis # connect to the redis cache
 from Database.tunables import tunables_init, tunables # tunables used by the bot
 from Events.MemberJoin.Core import caller as on_member_join_caller # core member join event handler
 from Events.Message.Core import caller as on_message_caller # core message event handler
@@ -231,6 +232,7 @@ async def main() -> None:
         await load_cogs_cmd()
         console.start()
         await connect_pool()
+        await connect_redis()
         # await load_cogs_console()
         await client.start(os.getenv('DISCORD_TOKEN'))
 

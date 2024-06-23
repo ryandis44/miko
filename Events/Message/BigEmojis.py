@@ -6,9 +6,11 @@ and sends it in an embed to make the emoji bigger
 
 
 import discord
+import logging
 
 from Database.MikoCore import MikoCore
 from misc.misc import sanitize_name
+LOGGER = logging.getLogger()
 
 async def big_emojis(mc: MikoCore) -> bool:
     if mc.profile.feature_enabled('BIG_EMOJIS') != 1: return False
@@ -42,7 +44,7 @@ async def big_emojis(mc: MikoCore) -> bool:
                 else: await mc.message.message.channel.send(embed=e, silent=True)
                 await mc.user.increment_statistic('BIG_EMOJIS_SENT')
                 return True
-            except Exception as e: print(f"Big emoji error: {e}")
+            except Exception as e: LOGGER.error(f"Big emoji error: {e}")
     return False
 
 async def __big_emoji_embed(mc: MikoCore, auth: str) -> discord.Embed:

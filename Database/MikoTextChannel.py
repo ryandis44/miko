@@ -18,12 +18,18 @@ LOGGER = logging.getLogger()
 class MikoTextChannel:
     
     def __init__(self) -> None:
-        self.channel: discord.TextChannel = None
+        self.channel: discord.TextChannel|discord.Thread = None
+        self.thread: discord.Thread = None
     
     
     
-    async def ainit(self, channel: discord.TextChannel, client: Bot, check_exists: bool = True) -> None:
-        self.channel = channel
+    async def ainit(self, channel: discord.TextChannel|discord.Thread, client: Bot, check_exists: bool = True) -> None:
+        
+        if channel.type in [discord.ChannelType.public_thread, discord.ChannelType.private_thread, discord.ChannelType.news_thread]:
+            self.thread = channel
+            self.channel = channel.parent
+        else: self.channel = channel
+        
         self.client = client
         if check_exists: await self.__exists()
     
