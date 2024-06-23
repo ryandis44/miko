@@ -20,8 +20,8 @@ class TextAI(Setting):
             desc = "Choose to enable Generative Text AI Integration and what personality to use",
             emoji = "🌐",
             table = "CHANNEL_SETTINGS",
-            col = "text_ai_mode",
-            options=tunables('OPENAI_PERSONALITIES')
+            col = "ai_mode",
+            options=tunables('GENERATIVE_AI_MODES')
         )
 
 class TextAIThreads(Setting):
@@ -29,11 +29,11 @@ class TextAIThreads(Setting):
     def __init__(self, mc):
         super().__init__(
             mc=mc,
-            name = "Generative Text AI Threads",
+            name = "Generative AI Threads",
             desc = "Create threads (private chat sessions) in this channel when interacting with Generative Text AI. Helps prevent clutter.",
             emoji = "🧵",
             table = "CHANNEL_SETTINGS",
-            col = "text_ai_threads",
+            col = "ai_threads",
             options=[
                 [
                     1,

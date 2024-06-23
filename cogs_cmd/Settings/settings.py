@@ -107,7 +107,7 @@ class Setting:
             if val: state = "+ ENABLED +"
             else: state = "- DISABLED -"
         else:
-            if val is None: state = "- DISABLED -"
+            if val is None or val == "DISABLED": state = "- DISABLED -"
             else: state = f"+ {val} +"
         
         reason = ""

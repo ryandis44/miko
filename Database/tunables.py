@@ -58,14 +58,14 @@ def assign_tunables(val):
 
 def configure_tunables() -> None:
     global TUNABLES
-    TUNABLES['OPENAI_PERSONALITIES'] = []
+    TUNABLES['GENERATIVE_AI_MODES'] = []
     temp = []
     for key, val in TUNABLES.items():
         try:
             if 'PERMS_PROFILE_' in key:
                 TUNABLES[key] = PermissionProfile(profile=str(key)[14:])
             
-            if 'OPENAI_PERSONALITY_' in key:
+            if 'GENERATIVE_AI_MODE_' in key:
                 d = loads(val)
                 temp.append(d)
         except Exception as e: LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PROFILE {key} {val}")
@@ -76,7 +76,7 @@ def configure_tunables() -> None:
     except Exception as e: LOGGER.error(f"TUNABLES ERROR: Could not SORT AI PERSONALITIES: {e}")
     for d in temp:
         try:
-            TUNABLES['OPENAI_PERSONALITIES'].append(
+            TUNABLES['GENERATIVE_AI_MODES'].append(
                 [
                     int(d['permission_level']),
                     SelectOption(
@@ -87,17 +87,18 @@ def configure_tunables() -> None:
                     )
                 ]
             )
-            TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"] = {
+            TUNABLES[f"GENERATIVE_AI_MODE_{d['value']}"] = {
                 'prompt': d['prompt'],
                 'model': d['model'],
+                'api': d['api'],
                 'value': d['value'],
                 'input_tokens': d['input_tokens'],
                 'response_tokens': d['response_tokens']
             }
         except Exception as e:
             try:
-                TUNABLES['OPENAI_PERSONALITIES'].pop()
-                del TUNABLES[f"OPENAI_PERSONALITY_{d['value']}"]
+                TUNABLES['GENERATIVE_AI_MODES'].pop()
+                del TUNABLES[f"GENERATIVE_AI_MODE_{d['value']}"]
             except: pass
             LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
 

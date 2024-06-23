@@ -20,6 +20,7 @@ from Events.MemberJoin.Core import caller as on_member_join_caller # core member
 from Events.Message.Core import caller as on_message_caller # core message event handler
 from Events.Presence.Core import caller as on_presence_update_caller # core presence event handler
 from Events.RawMemberRemove.Core import caller as on_raw_member_remove_caller # core raw member remove event handler
+from Events.RawMessageEdit.Core import caller as on_raw_message_edit_caller # core raw message edit event handler
 from Events.VoiceStateUpdate.Core import caller as on_voice_state_update_caller # core voice state update event handler
 
 
@@ -144,6 +145,13 @@ async def on_raw_member_remove(payload):
 async def on_voice_state_update(member, before, after):
     try: await on_voice_state_update_caller(member, before, after, client)
     except Exception as e: LOGGER.error(f"Error in on_voice_state_update: {e}")
+
+
+
+@client.event
+async def on_raw_message_edit(payload):
+    try: await on_raw_message_edit_caller(payload, client)
+    except Exception as e: LOGGER.error(f"Error in on_raw_message_edit: {e}")
 
 
 

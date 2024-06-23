@@ -45,7 +45,7 @@ class MikoTextChannel:
         else: await self.__update_database(__rawchannel)
         
         __db_string = (
-            "SELECT text_ai_mode,text_ai_threads "
+            "SELECT ai_mode,ai_threads "
             f"FROM CHANNEL_SETTINGS WHERE channel_id='{self.channel.id}'"
         )
         __rawchannel_settings = await db.execute(__db_string)
@@ -57,8 +57,8 @@ class MikoTextChannel:
             LOGGER.info(f"Added {self.channel.name} settings in guild {self.channel.guild} to database")
             __rawchannel_settings = await db.execute(__db_string)
         
-        self.text_ai_mode = __rawchannel_settings[0][0]
-        self.text_ai_threads = __rawchannel_settings[0][1]
+        self.ai_mode = __rawchannel_settings[0][0]
+        self.ai_threads = __rawchannel_settings[0][1]
     
     
     
@@ -81,6 +81,15 @@ class MikoTextChannel:
     @property
     def channel_settings(self) -> dict:
         return {
-            'text_ai_mode': self.text_ai_mode,
-            'text_ai_threads': self.text_ai_threads
+            'ai_mode': self.ai_mode,
+            'ai_threads': self.ai_threads
         }
+    
+    
+    
+    async def set_ai_mode(self, mode: str) -> None:
+        mode = str(mode).upper()
+        await db.execute(
+            f"UPDATE CHANNEL_SETTINGS SET ai_mode='{mode}' WHERE channel_id='{self.channel.id}'"
+        )
+        self.ai_mode = mode

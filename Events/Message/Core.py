@@ -13,7 +13,7 @@ from Events.Message.BigEmojis import big_emojis
 from Events.Message.BruhReact import bruh_react
 from Events.Message.MusicPlayerReposition import reposition_music_player
 from Events.Message.ReplyToMention import reply_to_mention
-from GenerativeAI.GenerativeAI import GenerativeAI
+from GenerativeAI.Core import GenerativeAI
 LOGGER = logging.getLogger()
 
 async def caller(message: discord.Message, client: Bot) -> None:

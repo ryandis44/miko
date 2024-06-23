@@ -36,9 +36,12 @@ class AnimeSearchView(discord.ui.View):
     
     
     async def on_timeout(self) -> None:
-        await self.msg.edit(
-            content=self.mc.tunables('GLOBAL_VIEW_TIMEOUT_MESSAGE')
-        )
+        try:
+            await self.msg.edit(
+                content=self.mc.tunables('GLOBAL_VIEW_TIMEOUT_MESSAGE'),
+                view=None
+            )
+        except: pass
         
     
     

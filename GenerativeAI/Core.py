@@ -24,7 +24,7 @@ class GenerativeAI:
     async def ainit(self) -> None:
         
         # Do not cache messages if generative AI is not enabled
-        if self.mc.channel.text_ai_mode is None: return # or image_ai_mode is None
+        if self.mc.channel.ai_mode == "DISABLED": return
         
         '''
         If:
@@ -36,6 +36,19 @@ class GenerativeAI:
             - Generate a response
         '''
         if (self.mc.message.message.author.bot and self.mc.message.message.author.id != self.mc.message.client.user.id) \
-            or self.mc.message.message.author.system or self.mc.message.message.content.startswith("!"): return
+            or self.mc.message.message.author.system or self.mc.message.message.content.startswith(self.mc.tunables('GENERATIVE_AI_MESSAGE_IGNORE_CHAR')): return
         
         await self.mc.message.cache_message()
+
+        try: api = self.mc.tunables(f'GENERATIVE_AI_MODE_{self.mc.channel.ai_mode}')['api']
+        except: api = self.mc.tunables(f'GENERATIVE_AI_MODE_DISABLED')['api']
+        match api:
+            
+            case "openai":
+                print("OpenAI API")
+            
+            case "mikoapi":
+                print("Miko API")
+            
+            # Invalid API, revert to disabled
+            case _: await self.mc.channel.set_ai_mode(mode="DISABLED")

@@ -174,7 +174,7 @@ async def help_embed(mc: MikoCore) -> list:
 
 
 
-    if pr.feature_enabled('TEXT_AI_MODE') == 1:
+    if pr.feature_enabled('AI_MODE') == 1:
         temp.append(
             "🌐 __**Generative Text AI/ChatGPT Integration**__:\n"
             f"> To use Generative Text AI/ChatGPT, open your settings menu ({mc.tunables('SLASH_COMMAND_SUGGEST_SETTINGS')}) "
