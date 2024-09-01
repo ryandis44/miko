@@ -39,7 +39,7 @@ async def connect_pool():
         LOGGER.debug("Attempting asynchronous database connection via LAN...")
         if os.getenv('CONNECTION') == "REMOTE": raise Exception
         pool = await aiomysql.create_pool(
-                host='10.0.0.10',
+                host='192.168.0.12',
                 port=3306,
                 connect_timeout=2,
                 user=os.getenv('DATABASE_USERNAME'),
@@ -157,7 +157,7 @@ def dbclass_connect():
         db = mariadb.connect(
             user=os.getenv('DATABASE_USERNAME'),
             password=os.getenv('DATABASE_PASSWORD'),
-            host='10.0.0.10',
+            host='192.168.0.12',
             connect_timeout=2, # Only try for 2 seconds to connect locally.
             port=3306,
             database=os.getenv('DATABASE')
