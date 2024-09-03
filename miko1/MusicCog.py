@@ -34,7 +34,7 @@ class MusicCog(commands.Cog):
             self.client.lavalink.add_event_hooks(self)
         if os.getenv('CONNECTION') != "REMOTE":
             self.client.lavalink.add_node(
-                '10.0.0.10',
+                '192.168.0.12',
                 2333,
                 tunables('LAVALINK_PASSWORD'),
                 'na',
