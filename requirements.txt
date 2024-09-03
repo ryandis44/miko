@@ -1,14 +1,14 @@
 # windows-curses for windows development
 
 python-dotenv==1.0.1
-requests==2.31.0
-PyYAML==6.0.1
+requests==2.32.3
+PyYAML==6.0.2
 mysql-connector-python==8.3.0
 dnspython==2.6.1
 num2words==0.5.13
 discord.py==2.3.1
 discord.py-Console==0.1.2
-pillow==10.2.0
+pillow==10.4.0
 pyarr==5.2.0
 openai==1.14.3
 aiomysql==0.2.0
