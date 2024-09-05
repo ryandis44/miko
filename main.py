@@ -63,7 +63,7 @@ class Bot(commands.Bot):
     async def on_ready(self) -> None:
         if self.first_run:
             await self.pool.create_node(
-                host="192.168.0.12",
+                host="10.0.0.10",
                 port=2333,
                 label="MAIN",
                 password=tunables('LAVALINK_PASSWORD'),
