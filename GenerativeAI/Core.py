@@ -17,15 +17,41 @@ import logging
 from Database.MikoCore import MikoCore
 from Database.Redis import RedisCache
 from GenerativeAI.CachedObjects import CachedMessage
-# from GenerativeAI.OpenAI.ChatGPT import ChatGPT
+from GenerativeAI.OpenAI.ChatGPT import ChatGPT
 from json import loads
 LOGGER = logging.getLogger()
 r = RedisCache(__file__)
 
-class GenerativeAI:
+
+
+############################################################################################################
+
+
+
+class CancelButton(discord.ui.Button):
+    def __init__(self) -> None:
+        super().__init__(
+            label="Cancel",
+            style=discord.ButtonStyle.red,
+            emoji="✖",
+            row=1,
+            disabled=False
+        )
+    
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await self.view.cancel(interaction)
+
+
+
+class GenerativeAI(discord.ui.View):
     def __init__(self, mc: MikoCore) -> None:
         self.mc = mc
         self.t = discord.ChannelType
+        super().__init__(timeout=mc.tunables('GLOBAL_VIEW_TIMEOUT'))
+
+
+
+    async def on_timeout(self) -> None: self.stop()
     
     
     
@@ -38,11 +64,6 @@ class GenerativeAI:
         except:
             await self.mc.channel.set_ai_mode(mode="DISABLED")
             return
-        
-        self.model = self.ai_mode['model']
-        self.value = self.ai_mode['value']
-        self.input_tokens = self.ai_mode['input_tokens']
-        self.response_tokens = self.ai_mode['response_tokens']
         
         
         '''
@@ -84,7 +105,7 @@ class GenerativeAI:
         Then:
             - Get context for the AI model (chat history); this is the thread's messages
         '''
-        match self.mc.channel.channel.type:
+        match self.mc.message.message.channel.type:
             
             case self.t.text | self.t.voice | self.t.news | self.t.forum | self.t.stage_voice:
                 # If not a thread and ...
@@ -95,16 +116,18 @@ class GenerativeAI:
                         
                         # Additionally if ...
                         if (len(self.mc.message.message.content.split()) <= 1 and self.mc.message.message.content == f"<@{str(self.mc.channel.client.user.id)}>"):
-                            # then ...
+                            await self.on_timeout()
                             return
-                # else ... (get context for the AI model)
+                else:
+                    await self.on_timeout()
+                    return
             
             case self.t.public_thread | self.t.private_thread | self.t.news_thread:
                 if not self.mc.tunables('FEATURE_ENABLED_AI_THREADS'):
                     await self.mc.message.message.reply('AI_THREADS_DISABLED_MESSAGE')
                     return
                 
-                try: await self.mc.channel.channel.fetch_member(self.mc.user.client.user.id)
+                try: await self.mc.message.message.channel.fetch_member(self.mc.user.client.user.id)
                 except: return
                 
                 if (len(self.mc.message.message.content) == 0 and len(self.mc.message.message.attachments) == 0): return
@@ -123,13 +146,12 @@ class GenerativeAI:
         '''
         match self.ai_mode['api']:
             
-            # case "openai": await ChatGPT(mc=self.mc, ai_mode=self.ai_mode, chats=self.chats).ainit()
+            case "openai": await ChatGPT(mc=self.mc, ai_mode=self.ai_mode, chats=self.chats).ainit()
             
             case "mikoapi": LOGGER.critical("MikoAPI (Generative AI) is not yet implemented.")
             
             # Invalid API, revert to disabled
             case _:
-                return
                 try: await self.mc.channel.set_ai_mode(mode="DISABLED")
                 except: pass
 
@@ -153,7 +175,6 @@ class GenerativeAI:
 
 
     async def __fetch_chats(self) -> bool:
-        print("fetching chats")
         
         self.chats = await self.__fetch_replies()
         
@@ -179,7 +200,7 @@ class GenerativeAI:
                         elif cmsg.content != "" or len(cmsg.attachments) > 0 or len(cmsg.embeds) > 0:
                             m = cmsg
                         else:
-                            m: discord.Message = await self.mc.channel.channel.fetch_message(replies[-1].reference.message_id)
+                            m: discord.Message = await self.mc.message.message.channel.fetch_message(replies[-1].reference.message_id)
                             if m is None:
                                 i+=1
                                 continue
@@ -209,22 +230,3 @@ class GenerativeAI:
             if (m.content != "" or len(m.attachments) > 0 or len(m.embeds) > 0) and m.id != self.mc.message.message.id:
                 replies.append(m)
         return replies
-
-
-
-    def __remove_mention(self, msg: list) -> list:
-        for i, word in enumerate(msg):
-            if word in [f"<@{str(self.mc.channel.client.user.id)}>"]:
-                # Remove word mentioning Miko
-                msg.pop(i)
-        return msg
-
-
-
-    async def __check_attachments(self, message: discord.Message|CachedMessage) -> str|None:
-        if len(message.attachments) == 0: return None
-        if message.attachments[0].filename != "message.txt": return None
-        try: return (await message.attachments[0].read()).decode()
-        except:
-            try: return message.attachments[0].data
-            except: return None

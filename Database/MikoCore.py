@@ -157,3 +157,22 @@ class MikoCore:
             )
         except Exception as e:
             LOGGER.error(f'Failed to greet new member {self.user.user} in guild {self.guild.guild} | {e}')
+
+
+
+    def ai_remove_mention(self, msg: list) -> list:
+        for i, word in enumerate(msg):
+            if word in [f"<@{str(self.mc.channel.client.user.id)}>"]:
+                # Remove word mentioning Miko
+                msg.pop(i)
+        return msg
+
+
+
+    async def ai_check_attachments(self, message: discord.Message|CachedMessage) -> str|None:
+        if len(message.attachments) == 0: return None
+        if message.attachments[0].filename != "message.txt": return None
+        try: return (await message.attachments[0].read()).decode()
+        except:
+            try: return message.attachments[0].data
+            except: return None
