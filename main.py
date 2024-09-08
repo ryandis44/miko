@@ -54,6 +54,7 @@ load_dotenv() # load environment variables from .env file
 Create bot class and define bot intents. These are used to determine what events the bot will receive.
 Additionally setup music player and on_ready event.
 '''
+LAN_IP = os.getenv('LAN_IP')
 class Bot(commands.Bot):
     def __init__(self) -> None:
         intents: discord.Intents = discord.Intents.all()
@@ -66,7 +67,7 @@ class Bot(commands.Bot):
     async def on_ready(self) -> None:
         if self.first_run:
             await self.pool.create_node(
-                host="10.0.0.10",
+                host=LAN_IP,
                 port=2333,
                 label="MAIN",
                 password=tunables('LAVALINK_PASSWORD'),

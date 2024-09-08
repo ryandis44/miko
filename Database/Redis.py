@@ -7,12 +7,23 @@ import logging
 import os
 import redis.asyncio as redis
 
-from Database.MySQL import IP, AsyncDatabase
+from Database.MySQL import AsyncDatabase
 from Database.tunables import tunables
+from dotenv import load_dotenv
 from redis.commands.json.path import Path
 from redis.commands.search.query import Query
 db = AsyncDatabase('Database.RedisCache.py')
 LOGGER = logging.getLogger()
+load_dotenv()
+
+
+
+###########################################################################################################################
+
+
+
+LAN_IP = os.getenv('LAN_IP')
+VPN_IP = os.getenv('VPN_IP')
 
 connection = None
 async def connect_redis():
@@ -22,7 +33,7 @@ async def connect_redis():
         LOGGER.debug("Attempting connection to Redis server...")
         if os.getenv('CONNECTION') == "REMOTE": raise Exception
         connection = redis.Redis(
-            host='192.168.0.12',
+            host=LAN_IP,
             port=tunables('REDIS_PORT'),
             password=tunables('REDIS_PASSWORD'),
             decode_responses=True,
@@ -32,10 +43,10 @@ async def connect_redis():
         
         LOGGER.info("Connected to Redis server via LAN!")
     except Exception as e:
-        LOGGER.debug("Redis server not running locally, attempting connection via Cloudflare...")
+        LOGGER.debug("Redis server not running locally, attempting connection via VPN...")
         try:
             connection = redis.Redis(
-                host=IP,
+                host=VPN_IP,
                 port=tunables('REDIS_PORT'),
                 password=tunables('REDIS_PASSWORD'),
                 decode_responses=True
@@ -43,7 +54,7 @@ async def connect_redis():
             
             if not await connection.ping(): raise Exception
             
-            LOGGER.info("Connected to Redis server via Cloudflare!\n")
+            LOGGER.info("Connected to Redis server via VPN!\n")
         except:
             LOGGER.critical(f"Failed to connect to Redis server: {e}")
 
