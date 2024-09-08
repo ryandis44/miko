@@ -13,8 +13,6 @@ from openai import OpenAI
 
 openai_client = OpenAI(api_key=tunables('OPENAI_API_KEY'))
 
-class RegenerateButton: pass
-
 class CancelButton(discord.ui.Button):
     def __init__(self) -> None:
         super().__init__(
@@ -33,10 +31,9 @@ class CancelButton(discord.ui.Button):
 
 
 class ChatGPT(discord.ui.View):
-    def __init__(self, mc: MikoCore):
+    def __init__(self, mc: MikoCore, ai_mode: dict, chats: list) -> None:
         super().__init__(timeout=mc.tunables('GLOBAL_VIEW_TIMEOUT'))
         self.mc = mc
-        
         self.msg: discord.Message = None
         
         self.add_item(CancelButton())
