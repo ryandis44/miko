@@ -17,7 +17,7 @@ async def connect_redis():
         print("\n\n[REDIS] Attempting local connection...")
         if os.getenv('CONNECTION') == "REMOTE": raise Exception
         connection = redis.Redis(
-            host='192.168.0.12',
+            host='10.0.0.10',
             port=int(port),
             password=tunables('REDIS_PASSWORD'),
             decode_responses=True,

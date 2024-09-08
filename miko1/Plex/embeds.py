@@ -13,7 +13,7 @@ def sonarr():
     if os.getenv('CONNECTION') == "REMOTE":
         host_url = tunables('SONARR_URL')
     else:
-        host_url = 'http://192.168.0.12:8989/'
+        host_url = 'http://10.0.0.10:8989/'
     api_key = tunables('SONARR_API_KEY')
     s = SonarrAPI(host_url=host_url, api_key=api_key)
     return s
