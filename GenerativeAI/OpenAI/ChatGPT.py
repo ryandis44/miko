@@ -11,18 +11,16 @@ import re
 import tiktoken
 
 from Database.MikoCore import MikoCore
-from Database.tunables import tunables
 from GenerativeAI.CachedObjects import CachedMessage
 from openai import OpenAI
 LOGGER = logging.getLogger()
-
-openai_client = OpenAI(api_key=tunables('OPENAI_API_KEY'))
     
 
 
 class ChatGPT:
     def __init__(self, mc: MikoCore, ai_mode: dict, chats: list) -> None:
         self.mc = mc
+        self.openai_client = OpenAI(api_key=mc.tunables('OPENAI_API_KEY'))
         self.ai_mode = ai_mode
         self.cached_chats = chats
         self.model = ai_mode['model']
@@ -45,7 +43,9 @@ class ChatGPT:
     
     async def ainit(self) -> None:
         
-        await self.__prep_chat()
+        if not await self.__prep_chat(): return
+        if not await self.__send_reply(): return
+        await self.respond()
 
 
 
@@ -106,7 +106,7 @@ class ChatGPT:
                 
                 
                 # Add message to chat list
-                if m.author.id == self.mc.channel.channel.guild.me.id:
+                if m.author.id == self.mc.message.message.channel.guild.me.id:
                     ct = {"role": "assistant", "content": msg}
                 else:
                     # If message is >response_tokens, split responses
@@ -125,6 +125,62 @@ class ChatGPT:
         except Exception as e:
             LOGGER.error(f"Error initializing ChatGPT: {e}")
             return False
+
+
+
+    async def __send_reply(self) -> bool:
+        if self.mc.channel.ai_threads == "ALWAYS":
+            if await self.__create_thread()
+
+
+
+    async def __create_thread(self, content: str, embed: discord.Embed, attachments) -> bool:
+        if self.mc.channel.ai_threads is None or (self.msg is not None and self.msg.channel.type in self.mc.threads): return False
+        if self.mc.profile.feature_enabled('AI_THREADS') != 1: return False
+        
+        '''
+        Miko will create a thread if:
+            - It has private thread creation permission
+            - AND it has manage threads permission
+            - AND FINALLY the user interacting with Miko is able to
+            send messages in threads.
+            - OR if gpt_threads == "ALWAYS" and the above
+            is satisfied
+        '''
+        create = self.mc.message.message.channel.permissions_for(self.mc.message.message.channel.guild.me).create_private_threads
+        manage = self.mc.message.message.channel.permissions_for(self.mc.message.message.channel.guild.me).manage_threads
+        user_can_send_messages = self.mc.message.message.channel.permissions_for(self.mc.user.user).send_messages_in_threads
+        if self.mc.message.message.channel.type == discord.ChannelType.text and (create and manage and user_can_send_messages):
+            if len(self.mc.message.message.content) > 0:
+                name = ' '.join(self.mc.ai_remove_mention(self.mc.message.message.content.split()))
+            else:
+                name = self.mc.ai_remove_mention(self.mc.message.message.content.split())
+                if len(name) > 0: name = ' '.join(name)
+                else: name = ''.join(name)
+            
+            self.thread = await self.mc.message.message.channel.create_thread(
+                name=name[0:90] if len(name) < 89 else name[0:90] + "...",
+                auto_archive_duration=60,
+                slowmode_delay=self.mc.tunables('GENERATIVE_AI_THREAD_SLOWMODE_DELAY'),
+                reason="User-generated generative AI thread",
+                invitable=True
+            )
+            temp = await self.thread.send(
+                content=content,
+                embed=embed,
+                files=attachments,
+                silent=True,
+                allowed_mentions=discord.AllowedMentions(
+                    replied_user=True,
+                    users=True,
+                )
+                # view=self # Depreciated Miko 2.0 feature; TODO for 3.0
+            )
+            
+            if self.msg is None:
+                await self.mc.message.message.reply(
+                    content=self.__thread_created_info()
+                )
 
 
 

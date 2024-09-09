@@ -169,7 +169,7 @@ class MikoCore:
 
 
 
-    async def ai_check_attachments(self, message: discord.Message|CachedMessage) -> str|None:
+    async def ai_check_attachments(self, message: discord.Message) -> str|None:
         if len(message.attachments) == 0: return None
         if message.attachments[0].filename != "message.txt": return None
         try: return (await message.attachments[0].read()).decode()
