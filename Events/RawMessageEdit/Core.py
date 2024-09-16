@@ -1,5 +1,5 @@
 '''
-Calling file for raw member remove events
+Calling file for raw message edit events
 '''
 
 

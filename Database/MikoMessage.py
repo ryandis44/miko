@@ -141,6 +141,11 @@ class MikoMessage:
 
 
 
+    async def delete_cached_message(self, payload: discord.RawMessageDeleteEvent) -> None:
+        await r.delete(key=f"m:{payload.message_id}")
+
+
+
     async def __get_attachments(self) -> str:
         if len(self.payload.data['attachments']) > 0:
             for attachment in self.payload.data['attachments']:

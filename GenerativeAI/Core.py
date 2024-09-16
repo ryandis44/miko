@@ -11,15 +11,17 @@ a response and in a timely manner.
 
 
 
-import asyncio
+import asyncio # for sleep
 import discord
 import logging
+import re
 
 from Database.MikoCore import MikoCore
 from Database.Redis import RedisCache
 from GenerativeAI.CachedObjects import CachedMessage
 from GenerativeAI.OpenAI.ChatGPT import ChatGPT
-from json import loads
+from io import BytesIO # for message.txt
+from json import loads # for loading redis data
 LOGGER = logging.getLogger()
 r = RedisCache(__file__)
 
@@ -68,13 +70,12 @@ class GenerativeAI(discord.ui.View):
             await self.mc.channel.set_ai_mode(mode="DISABLED")
             return
         
-        if self.mc.tunables('FEATURE_ENABLED_MESSAGE_CACHING'): await self.mc.message.cache_message()
-        
         '''
         If:
             - The message is from a bot that is not Miko
             - The message is from discord (system message)
             - The message is intentionally ignored (starts with '!')
+            - The message is only a mention (no other content)
         Then return and do not:
             - Cache the message
             - Generate a response
@@ -82,10 +83,16 @@ class GenerativeAI(discord.ui.View):
         Else:
             - Cache the message and proceed
         '''
-        if (self.mc.message.message.author.bot) \
-            or self.mc.message.message.author.system or self.mc.message.message.content.startswith(self.mc.tunables('GENERATIVE_AI_MESSAGE_IGNORE_CHAR')): return
         
         
+        
+        ### TODO somewhere around here may have caused 'Task was destroyed but it is pending!' error for discord.py: on_message
+        if self.mc.message.message.author.system or self.mc.message.message.content.startswith(self.mc.tunables('GENERATIVE_AI_MESSAGE_IGNORE_CHAR'))\
+                or re.match(r"^((<@\d{15,22}>)\s*)+$", self.mc.message.message.content): return
+
+        if self.mc.tunables('MESSAGE_CACHING'): await self.mc.message.cache_message()
+        
+        if self.mc.message.message.author.bot and self.mc.message.message.author.id == self.mc.channel.client.user.id: return # do not respond to yourself
         
         '''
         If not a thread and:
@@ -146,7 +153,8 @@ class GenerativeAI(discord.ui.View):
             content=self.mc.tunables('LOADING_EMOJI'),
             silent=True,
             view=self,
-            embed=None
+            embed=None,
+            mention_author=False
         )
 
         '''
@@ -173,7 +181,12 @@ class GenerativeAI(discord.ui.View):
                 if i >= self.mc.tunables('GENERATIVE_AI_MAX_RETRIES'): raise Exception
                 if self.text_response: break
                 i+=1
+                
+                if i == 1: await self.msg.edit(
+                    content=f"Still loading... {self.mc.tunables('LOADING_EMOJI')}",
+                )
                 await asyncio.sleep(2)
+                
         except:
             LOGGER.error(f"Failed to generate '{self.ai_mode['api']}' response [Max retries reached]")
             await self.msg.edit(
@@ -190,22 +203,71 @@ class GenerativeAI(discord.ui.View):
         # )
         
         resp_len = len(self.text_response)
-        if (resp_len >= 750 and resp_len <= 3999) or self.mc.channel.ai_threads == "ALWAYS":
+        if ((resp_len >= 750 and resp_len <= 3999) or self.mc.channel.ai_threads == "ALWAYS"):
             embed = self.__embed()
             thread_content = (
                 self.__thread_info() +
                 "Please see my response below:"
             )
-            if await self.__create_thread(content=thread_content, embed=embed, attachments=None): return
+            if await self.__create_thread(
+                    content=thread_content if resp_len >= 750 else thread_content + "\n\n" + self.text_response,
+                    embed=embed if resp_len >= 750 else None,
+                    attachments=None
+                ): return
             
             await self.msg.edit(
-                content=None if self.response
+                content=None if resp_len >= 750 else self.text_response,
+                embed=embed if resp_len >= 750 else None,
+                allowed_mentions=discord.AllowedMentions(
+                    replied_user=True,
+                    users=True,
+                ),
+                view=self
             )
+            return
+
+        elif resp_len >= 4000:
+            b = bytes(self.text_response, 'utf-8')
+            attachments = [discord.File(BytesIO(b), "message.txt")]
+            
+            if await self.__create_thread(
+                content=(
+                    self.__thread_info() +
+                    "The response to your prompt was too long. I have sent it in this "
+                    "`message.txt` file. You can view on PC or Web (or Mobile if you "
+                    "are able to download the file)."
+                ),
+                embed=None,
+                attachments=attachments
+            ): return
+            
+            await self.msg.edit(
+                content=(
+                    "The response to your prompt was too long. I have sent it in this "
+                    "`message.txt` file. You can view on PC or Web (or Mobile if you "
+                    "are able to download the file)."
+                ),
+                attachments=attachments,
+                view=self
+            )
+            return
+        
+        await self.msg.edit(
+            content=self.text_response,
+            embed=None,
+            allowed_mentions=discord.AllowedMentions(
+                replied_user=True,
+                users=True
+            ),
+            view=self
+        )
+        
+        await self.mc.user.increment_statistic('GENERATIVE_AI_RESPONSES_GENERATED')
 
 
 
     async def __create_thread(self, content: str, embed: discord.Embed, attachments) -> bool:
-        if self.mc.channel.ai_threads is None or (self.msg is not None and self.msg.channel.type in self.mc.threads): return False
+        if self.mc.channel.ai_threads == "DISABLED" or (self.msg is not None and self.msg.channel.type in self.mc.threads): return False
         if self.mc.profile.feature_enabled('AI_THREADS') != 1: return False
         
         '''
@@ -249,8 +311,16 @@ class GenerativeAI(discord.ui.View):
             
             if self.msg is None:
                 await self.mc.message.message.reply(
-                    content=self.__thread_created_info()
+                    content=self.__thread_created_info(),
+                    embed=None,
+                    view=None
                 )
+            else: await self.msg.edit(
+                content=self.__thread_created_info(),
+                embed=None,
+                view=None
+            )
+            return True
 
 
 
@@ -267,7 +337,7 @@ class GenerativeAI(discord.ui.View):
             name=f"Generated by {self.mc.user.username}"
         )
         embed.set_footer(
-            text=f"{self.ai_mode['value']}  •  {self.ai_mode['model']}  •  Max Context Length {self.ai_mode['input_tokens']:,} Tokens"
+            text=f"3.0-BETA 1  •  {self.ai_mode['value']}  •  {self.ai_mode['model']}  •  Max Context Length {self.ai_mode['input_tokens']:,} Tokens"
         )
         return embed
 
@@ -293,7 +363,7 @@ class GenerativeAI(discord.ui.View):
     def __thread_created_info(self) -> str:
         return (
             f"I created a private thread that only you and I can access, {self.mc.message.message.author.mention}.\n"
-            f"→ Jump to that thread: (wip)"#{self.thread.jump_url}"
+            f"→ Jump to that thread: {self.thread.jump_url}"
         )
 
 
