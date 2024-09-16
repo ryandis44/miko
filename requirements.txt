@@ -19,3 +19,4 @@ tiktoken==0.6.0 # ChatGPT Token counting
 # wavelink==3.3.0 # music player
 mafic==2.10.0 # better music player
 PyNaCl==1.5.0 # music player
+setuptools==65.5.0
