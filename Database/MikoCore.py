@@ -162,7 +162,7 @@ class MikoCore:
 
     def ai_remove_mention(self, msg: list) -> list:
         for i, word in enumerate(msg):
-            if word in [f"<@{str(self.mc.channel.client.user.id)}>"]:
+            if word in [f"<@{str(self.channel.client.user.id)}>"]:
                 # Remove word mentioning Miko
                 msg.pop(i)
         return msg

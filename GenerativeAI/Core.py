@@ -11,6 +11,7 @@ a response and in a timely manner.
 
 
 
+import asyncio
 import discord
 import logging
 
@@ -47,6 +48,8 @@ class GenerativeAI(discord.ui.View):
     def __init__(self, mc: MikoCore) -> None:
         self.mc = mc
         self.t = discord.ChannelType
+        self.text_response = None
+        self.msg: discord.Message = None
         super().__init__(timeout=mc.tunables('GLOBAL_VIEW_TIMEOUT'))
 
 
@@ -65,6 +68,7 @@ class GenerativeAI(discord.ui.View):
             await self.mc.channel.set_ai_mode(mode="DISABLED")
             return
         
+        if self.mc.tunables('FEATURE_ENABLED_MESSAGE_CACHING'): await self.mc.message.cache_message()
         
         '''
         If:
@@ -78,10 +82,9 @@ class GenerativeAI(discord.ui.View):
         Else:
             - Cache the message and proceed
         '''
-        if (self.mc.message.message.author.bot and self.mc.message.message.author.id != self.mc.message.client.user.id) \
+        if (self.mc.message.message.author.bot) \
             or self.mc.message.message.author.system or self.mc.message.message.content.startswith(self.mc.tunables('GENERATIVE_AI_MESSAGE_IGNORE_CHAR')): return
         
-        await self.mc.message.cache_message()
         
         
         '''
@@ -138,22 +141,135 @@ class GenerativeAI(discord.ui.View):
                 return
 
         await self.__fetch_chats()
+        
+        self.msg = await self.mc.message.message.reply(
+            content=self.mc.tunables('LOADING_EMOJI'),
+            silent=True,
+            view=self,
+            embed=None
+        )
 
         '''
         Branch out to the different AI models and APIs. At this point in the
         code, all generalized processing has been done and model-specific
         operations can be performed.
         '''
-        match self.ai_mode['api']:
+        try:
+            i=0
+            while True:
+                match self.ai_mode['api']:
+                    
+                    case "openai": 
+                        chatgpt = ChatGPT(mc=self.mc, ai_mode=self.ai_mode, chats=self.chats)
+                        self.text_response = await chatgpt.ainit()
+                    
+                    case "mikoapi": LOGGER.critical("MikoAPI (Generative AI) is not yet implemented.")
+                    
+                    # Invalid API, revert to disabled
+                    case _:
+                        try: await self.mc.channel.set_ai_mode(mode="DISABLED")
+                        except: raise Exception("Failed to set AI mode to 'DISABLED'")
+                
+                if i >= self.mc.tunables('GENERATIVE_AI_MAX_RETRIES'): raise Exception
+                if self.text_response: break
+                i+=1
+                await asyncio.sleep(2)
+        except:
+            LOGGER.error(f"Failed to generate '{self.ai_mode['api']}' response [Max retries reached]")
+            await self.msg.edit(
+                content=f"An error occurred while trying to generate a response. Please try again later.",
+                embed=None,
+                view=None
+            )
+            return
+        
+        # await self.msg.edit(
+        #     content=self.text_response,
+        #     embed=None,
+        #     view=None
+        # )
+        
+        resp_len = len(self.text_response)
+        if (resp_len >= 750 and resp_len <= 3999) or self.mc.channel.ai_threads == "ALWAYS":
+            embed = self.__embed()
+            thread_content = (
+                self.__thread_info() +
+                "Please see my response below:"
+            )
+            if await self.__create_thread(content=thread_content, embed=embed, attachments=None): return
             
-            case "openai": await ChatGPT(mc=self.mc, ai_mode=self.ai_mode, chats=self.chats).ainit()
+            await self.msg.edit(
+                content=None if self.response
+            )
+
+
+
+    async def __create_thread(self, content: str, embed: discord.Embed, attachments) -> bool:
+        if self.mc.channel.ai_threads is None or (self.msg is not None and self.msg.channel.type in self.mc.threads): return False
+        if self.mc.profile.feature_enabled('AI_THREADS') != 1: return False
+        
+        '''
+        Miko will create a thread if:
+            - It has private thread creation permission
+            - AND it has manage threads permission
+            - AND FINALLY the user interacting with Miko is able to
+            send messages in threads.
+            - OR if gpt_threads == "ALWAYS" and the above
+            is satisfied
+        '''
+        create = self.mc.message.message.channel.permissions_for(self.mc.message.message.channel.guild.me).create_private_threads
+        manage = self.mc.message.message.channel.permissions_for(self.mc.message.message.channel.guild.me).manage_threads
+        user_can_send_messages = self.mc.message.message.channel.permissions_for(self.mc.user.user).send_messages_in_threads
+        if self.mc.message.message.channel.type == discord.ChannelType.text and (create and manage and user_can_send_messages):
+            if len(self.mc.message.message.content) > 0:
+                name = ' '.join(self.mc.ai_remove_mention(self.mc.message.message.content.split()))
+            else:
+                name = self.mc.ai_remove_mention(self.mc.message.message.content.split())
+                if len(name) > 0: name = ' '.join(name)
+                else: name = ''.join(name)
             
-            case "mikoapi": LOGGER.critical("MikoAPI (Generative AI) is not yet implemented.")
+            self.thread = await self.mc.message.message.channel.create_thread(
+                name=name[0:90] if len(name) < 89 else name[0:90] + "...",
+                auto_archive_duration=60,
+                slowmode_delay=self.mc.tunables('GENERATIVE_AI_THREAD_SLOWMODE_DELAY'),
+                reason="User-generated generative AI thread",
+                invitable=True
+            )
+            temp = await self.thread.send(
+                content=content,
+                embed=embed,
+                files=attachments,
+                silent=True,
+                allowed_mentions=discord.AllowedMentions(
+                    replied_user=True,
+                    users=True,
+                )
+                # view=self # Depreciated Miko 2.0 feature; TODO for 3.0
+            )
             
-            # Invalid API, revert to disabled
-            case _:
-                try: await self.mc.channel.set_ai_mode(mode="DISABLED")
-                except: pass
+            if self.msg is None:
+                await self.mc.message.message.reply(
+                    content=self.__thread_created_info()
+                )
+
+
+
+    def __embed(self) -> discord.Embed:
+        temp = []
+        temp.append(f"{self.text_response}")
+        
+        embed = discord.Embed(
+            description=''.join(temp),
+            color=self.mc.tunables('GLOBAL_EMBED_COLOR')
+        )
+        embed.set_author(
+            icon_url=self.mc.user.miko_avatar,
+            name=f"Generated by {self.mc.user.username}"
+        )
+        embed.set_footer(
+            text=f"{self.ai_mode['value']}  •  {self.ai_mode['model']}  •  Max Context Length {self.ai_mode['input_tokens']:,} Tokens"
+        )
+        return embed
 
 
 
@@ -170,6 +286,14 @@ class GenerativeAI(discord.ui.View):
             "Also, __**no need to @ mention me in this thread**__. I will respond to all messages that are not just an @ mention "
             "(for adding people to this thread)."
             "\n\n"
+        )
+
+
+
+    def __thread_created_info(self) -> str:
+        return (
+            f"I created a private thread that only you and I can access, {self.mc.message.message.author.mention}.\n"
+            f"→ Jump to that thread: (wip)"#{self.thread.jump_url}"
         )
 
 
