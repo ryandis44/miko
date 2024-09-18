@@ -46,11 +46,31 @@ class MikoGuild:
             f"SELECT profile,emoji_id,name,owner_id,member_count FROM GUILDS WHERE guild_id='{self.guild.id}'"
         )
         if __rawguild == [] or __rawguild is None:
-            await db.execute(
-                "INSERT INTO GUILDS (guild_id, name, owner_id, member_count) VALUES "
-                f"('{self.guild.id}', '{sanitize_name(self.guild.name)}', '{self.guild.owner_id}', '{self.guild.member_count}')"
-            )
-            LOGGER.info(f"Added guild {self.guild.name} ({self.guild.id}) to database.")
+            
+            i = 0
+            while True:
+                if i>=3: break
+                i += 1
+                try:
+                    await db.execute(
+                        "INSERT INTO GUILDS (guild_id, name, owner_id, member_count) VALUES "
+                        f"('{self.guild.id}', '{sanitize_name(self.guild.name)}', '{self.guild.owner_id}', '{self.guild.member_count}')"
+                    )
+                    LOGGER.info(f"Added guild {self.guild.name} ({self.guild.id}) to database.")
+                except:
+                    
+                    # If we fail at inserting the guild, we need to check if the owner exists in the database.
+                    # The owner is a foreign key constraint on the GUILDS table, so we need to insert the owner
+                    # before the server. We handle this here
+                    __tmp = await db.execute(
+                        f"SELECT * FROM USERS WHERE user_id='{self.guild.owner_id}'"
+                    )
+                    if __tmp is None or __tmp == []:
+                        await db.execute(
+                            "INSERT INTO USERS (user_id, username, is_bot, last_interaction) VALUES "
+                            f"('{self.guild.owner_id}', '{sanitize_name(self.guild.owner.name)}', '{str(1) if self.guild.owner.bot else str(0)}', '0')"
+                        )
+                    else: break
             
         else:
             # Since we requested the guild from the database, and we know it exists,

@@ -92,6 +92,7 @@ class AsyncDatabase:
                     await check_pool()
                     continue
                 else: LOGGER.error(f"ASYNC DATABASE ERROR! [{self.file}] Could not execute: \"{exec_cmd}\"\n{e}")
+                raise Exception(f"ASYNC DATABASE ERROR! [{self.file}] Could not execute: \"{exec_cmd}\"\n{e}")
             break
         
         if exec_cmd.startswith("SELECT"):
