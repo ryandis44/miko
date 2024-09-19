@@ -384,6 +384,17 @@ class GenerativeAI(discord.ui.View):
             if self.mc.message.message.reference is not None:
                 replies = [self.mc.message.message.reference.resolved]
                 
+                '''
+                Logic here:
+                We are looping to loop through an entire reply chain.
+                - (Fastest) If the message has a reference (i.e. a reply), we
+                  try fetching it from the internal Discord cache
+                - (Idential speed as Discord) If not in the Discord cache,
+                  we check the Redis cache
+                - (Slowest) Else it is not in the Redis cache, we fetch the message
+                  from Discord and cache it in Redis. Fetching is subject
+                  to Discord's rate limits, which is why we use Redis
+                '''
                 i = 0
                 while True:
                     if replies[-1].reference is not None and i <= self.mc.tunables('GENERATIVE_AI_MAX_REPLIES_CHAIN'):
@@ -411,6 +422,11 @@ class GenerativeAI(discord.ui.View):
 
 
     async def __fetch_thread_messages(self) -> list:
+        '''
+        Simply retrieves the last GENERATIVE_AI_MAX_REDIS_QUERIED_THREAD_MESSAGES
+        amount of thread messages (regardless of replies) and caches them inside
+        Miko to be used for Generative AI
+        '''
         messages = await r.search(
             query=self.mc.message.message.channel.id,
             type="JSON_THREAD_ID",
