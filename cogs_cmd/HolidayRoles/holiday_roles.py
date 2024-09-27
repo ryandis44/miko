@@ -16,10 +16,10 @@ import discord
 from discord.utils import get
 
 def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
-    holiday1 = get(interaction.guild.roles, id=895834307338326057)
-    holiday2 = get(interaction.guild.roles, id=895834403190759454)
-    holiday3 = get(interaction.guild.roles, id=895834443460280360)
-    holiday4 = get(interaction.guild.roles, id=895834487479476294)
+    holiday1: discord.Role = get(interaction.guild.roles, id=895834307338326057)
+    holiday2: discord.Role = get(interaction.guild.roles, id=895834403190759454)
+    holiday3: discord.Role = get(interaction.guild.roles, id=895834443460280360)
+    holiday4: discord.Role = get(interaction.guild.roles, id=895834487479476294)
 
     member_counts = [len(holiday1.members), len(holiday2.members), len(holiday3.members), len(holiday4.members)]
 
@@ -30,11 +30,12 @@ def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
         if member_count < lowest:
             lowest = member_count
             next_role = i
+            
+    complete_holiday_members = holiday1.members + holiday2.members + holiday3.members + holiday4.members
+    all_members = interaction.guild.members
 
     if info_to_return == "EMBED":
 
-        complete_holiday_members = holiday1.members + holiday2.members + holiday3.members + holiday4.members
-        all_members = interaction.guild.members
 
         # For determining the contents of our embed description
         temp = []
@@ -50,7 +51,7 @@ def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
 
         # For determining members that are not
         # assigned to any holiday role
-        unassigned_members = [x for x in all_members if x not in complete_holiday_members]
+        unassigned_members = unassigned_users(all_members, complete_holiday_members)
 
         if len(unassigned_members) == 0:
             temp.append("All members are assigned\na holiday role.")
@@ -79,7 +80,7 @@ def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
         if len(complete_holiday_members) == len(set(complete_holiday_members)):
             temp.append("There are no members with\nmultiple holiday roles.")
         else:
-            members_duplicate_roles = [item for item, count in collections.Counter(complete_holiday_members).items() if count > 1]
+            members_duplicate_roles = multiple_roles(complete_holiday_members)
             temp.append(f"`{len(members_duplicate_roles)}` ")
             if len(members_duplicate_roles) == 1: temp.append("member is")
             else: temp.append("members are")
@@ -122,3 +123,22 @@ def get_holiday(interaction: discord.Interaction, info_to_return: str, mc):
             case 1: return holiday2.id
             case 2: return holiday3.id
             case 3: return holiday4.id
+    
+    elif info_to_return == "UNASSIGNED":
+        return unassigned_users(all_members, complete_holiday_members)
+    
+    elif info_to_return == "MULTIPLE":
+        return multiple_roles(complete_holiday_members)
+    
+    elif info_to_return == "ALL_ROLES":
+        return [holiday1, holiday2, holiday3, holiday4]
+
+
+
+def unassigned_users(all_members, complete_holiday_members) -> list[discord.Member]:
+    return [x for x in all_members if x not in complete_holiday_members]
+
+
+
+def multiple_roles(complete_holiday_members) -> list[discord.Member]:
+    return [item for item, count in collections.Counter(complete_holiday_members).items() if count > 1]

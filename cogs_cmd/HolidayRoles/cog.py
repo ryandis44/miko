@@ -12,6 +12,7 @@ import discord
 import logging
 import os
 
+from cogs_cmd.HolidayRoles.View import UnfuckHolidayRoles
 from cogs_cmd.HolidayRoles.holiday_roles import get_holiday
 from Database.MikoCore import MikoCore
 from discord.ext import commands
@@ -19,6 +20,8 @@ from discord import app_commands
 from dotenv import load_dotenv
 load_dotenv()
 LOGGER = logging.getLogger()
+
+
 
 class HolidayRoles(commands.Cog):
     def __init__(self, client):
@@ -47,7 +50,8 @@ class HolidayRoles(commands.Cog):
         
         await interaction.edit_original_response(
             content=None,
-            embed=get_holiday(interaction, "EMBED")
+            embed=get_holiday(interaction, "EMBED", mc),
+            view=UnfuckHolidayRoles(interaction=interaction, mc=mc)
         )
 
 
