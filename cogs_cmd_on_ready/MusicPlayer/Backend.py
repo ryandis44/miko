@@ -422,17 +422,23 @@ class VolumeDropdown(discord.ui.Select):
         self.player = player
         red_warning = self.player.client.get_emoji(1074463168526561311)
         
-        super().__init__(placeholder='Select a volume level...', custom_id="volume", options=[
+        options = [
             discord.SelectOption(label='25%', value=25, emoji='🔈', default=player.volume==25),
             discord.SelectOption(label='50%', value=50, emoji='🔉', default=player.volume==50),
             discord.SelectOption(label='75%', value=75, emoji='🔉', default=player.volume==75),
             discord.SelectOption(label='100%', value=100, emoji='🔊', default=player.volume==100),
-            # discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
-            # discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
-            # discord.SelectOption(label='400%. Most audio is distorted', value=400, emoji='⚠', default=player.volume==400),
-            # discord.SelectOption(label='500%. Everything is distorted', value=500, emoji='⚠', default=player.volume==500),
-            # discord.SelectOption(label='1,000%. Why?', value=1000, emoji=red_warning, default=player.volume==1000),
-        ])
+        ]
+        
+        if self.player.mc.tunables('MUSIC_PLAYER_EXTRA_VOLUME_OPTIONS'):
+            options.extend([
+                discord.SelectOption(label='200%. Some audio is distorted', value=200, emoji='🔊', default=player.volume==200),
+                discord.SelectOption(label='300%. More audio is distorted', value=300, emoji='⚠', default=player.volume==300),
+                discord.SelectOption(label='400%. Most audio is distorted', value=400, emoji='⚠', default=player.volume==400),
+                discord.SelectOption(label='500%. Everything is distorted', value=500, emoji='⚠', default=player.volume==500),
+                discord.SelectOption(label='1,000%. Why?', value=1000, emoji=red_warning, default=player.volume==1000),
+            ])
+        
+        super().__init__(placeholder='Select a volume level...', custom_id="volume", options=options)
         self.player = player
     
     

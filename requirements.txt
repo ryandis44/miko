@@ -9,7 +9,6 @@ num2words==0.5.13
 discord.py==2.3.1
 discord.py-Console==0.1.2
 pillow==10.4.0
-pyarr==5.2.0
 openai==1.14.3
 aiomysql==0.2.0
 aiohttp==3.9.3
