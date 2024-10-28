@@ -72,14 +72,15 @@ class ChatGPT:
             system_prompt = {"role": "system", "content": self.ai_mode['prompt']}
             user_current_content = {"role": "user", "content": msg}
             cnt += self.__num_tokens_from_messages(messages=[system_prompt, user_current_content])
+            # print(f"Tokens: {cnt:,}")
             
             self.chat.append(user_current_content)
             
             for m in self.cached_chats:
                 # if type(m) == discord.Message:
-                #     print(f">>> DISCORD: {m.content}")
+                #     print(f">>> DISCORD [{cnt:,} token(s)]: {m.content}")
                 # else:
-                #     print(f">>> REDIS: {m.content} {None if len(m.attachments) == 0 else m.attachments[0].data}")
+                #     print(f">>> REDIS [{cnt:,} token(s)]: {m.content} {None if len(m.attachments) == 0 else m.attachments[0].data}")
                 m: discord.Message|CachedMessage
                 msg = None
                 if m.content == "" and len(m.attachments) == 0:

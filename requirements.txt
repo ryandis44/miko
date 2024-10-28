@@ -14,7 +14,7 @@ aiomysql==0.2.0
 aiohttp==3.9.3
 redis==5.0.3
 hiredis==2.3.2
-tiktoken==0.7.0 # ChatGPT Token counting
+tiktoken==0.8.0 # ChatGPT Token counting
 # wavelink==3.3.0 # music player
 mafic==2.10.0 # better music player
 PyNaCl==1.5.0 # music player
