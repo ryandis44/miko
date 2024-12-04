@@ -59,7 +59,7 @@ class GenerativeAI(discord.ui.View):
     async def on_timeout(self) -> None: self.stop()
     
     
-    
+    # Entry point
     async def ainit(self) -> None:
         
         # Do not run any of this code if AI is disabled
@@ -91,6 +91,7 @@ class GenerativeAI(discord.ui.View):
                 or re.match(r"^((<@\d{15,22}>)\s*)+$", self.mc.message.message.content): return
 
         if self.mc.tunables('MESSAGE_CACHING'): await self.mc.message.cache_message()
+        else: return # do not use Discord for AI caching; will result in rate limiting
         
         if self.mc.message.message.author.bot and self.mc.message.message.author.id == self.mc.channel.client.user.id: return # do not respond to yourself
         
@@ -202,22 +203,32 @@ class GenerativeAI(discord.ui.View):
         #     view=None
         # )
         
+        
+        '''
+        Determine whether to create a thread, embed, or send a message
+        Thread:
+            - If the response is long enough for an embed, create thread
+              (unless thread mode is set to 'DISABLED')
+            - If threads are set to 'ALWAYS', create thread
+        Embed:
+            - If the response is 750 characters or more, create thread
+        '''
         resp_len = len(self.text_response)
-        if ((resp_len >= 750 and resp_len <= 3999) or self.mc.channel.ai_threads == "ALWAYS"):
+        if ((resp_len >= self.mc.tunables('GENERATIVE_AI_SEND_EMBED_THRESHOLD') and resp_len <= (self.mc.tunables('GLOBAL_MAX_MESSAGE_LENGTH') - 1)) or self.mc.channel.ai_threads == "ALWAYS"):
             embed = self.__embed()
             thread_content = (
                 self.__thread_info() +
                 "Please see my response below:"
             )
             if await self.__create_thread(
-                    content=thread_content if resp_len >= 750 else thread_content + "\n\n" + self.text_response,
-                    embed=embed if resp_len >= 750 else None,
+                    content=thread_content if resp_len >= self.mc.tunables('GENERATIVE_AI_SEND_EMBED_THRESHOLD') else thread_content + "\n\n" + self.text_response,
+                    embed=embed if resp_len >= self.mc.tunables('GENERATIVE_AI_SEND_EMBED_THRESHOLD') else None,
                     attachments=None
                 ): return
             
             await self.msg.edit(
-                content=None if resp_len >= 750 else self.text_response,
-                embed=embed if resp_len >= 750 else None,
+                content=None if resp_len >= self.mc.tunables('GENERATIVE_AI_SEND_EMBED_THRESHOLD') else self.text_response,
+                embed=embed if resp_len >= self.mc.tunables('GENERATIVE_AI_SEND_EMBED_THRESHOLD') else None,
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=True,
                     users=True,
@@ -226,32 +237,28 @@ class GenerativeAI(discord.ui.View):
             )
             return
 
-        elif resp_len >= 4000:
+        elif resp_len >= self.mc.tunables('GLOBAL_MAX_MESSAGE_LENGTH'):
             b = bytes(self.text_response, 'utf-8')
             attachments = [discord.File(BytesIO(b), "message.txt")]
             
+            # Create thread with message.txt and info
             if await self.__create_thread(
                 content=(
-                    self.__thread_info() +
-                    "The response to your prompt was too long. I have sent it in this "
-                    "`message.txt` file. You can view on PC or Web (or Mobile if you "
-                    "are able to download the file)."
+                    self.__thread_info() + self.mc.tunables('GENERATIVE_AI_MESSAGE_TOO_LONG_MSG')
                 ),
                 embed=None,
                 attachments=attachments
             ): return
             
+            # Send message with message.txt and info
             await self.msg.edit(
-                content=(
-                    "The response to your prompt was too long. I have sent it in this "
-                    "`message.txt` file. You can view on PC or Web (or Mobile if you "
-                    "are able to download the file)."
-                ),
+                content=(self.mc.tunables('GENERATIVE_AI_MESSAGE_TOO_LONG_MSG')),
                 attachments=attachments,
                 view=self
             )
             return
         
+        # Set AllowedMentions to True now that a response has been generated
         await self.msg.edit(
             content=self.text_response,
             embed=None,
@@ -320,6 +327,10 @@ class GenerativeAI(discord.ui.View):
                 embed=None,
                 view=None
             )
+            
+            # Assign thread to message that created it (so it can be referenced later in the thread)
+            await self.mc.message.assign_cached_message_to_thread(thread=self.thread)
+            
             return True
 
 

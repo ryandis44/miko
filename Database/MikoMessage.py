@@ -98,6 +98,23 @@ class MikoMessage:
                 }
             )
         else: pass # update cache?
+
+
+
+    async def assign_cached_message_to_thread(self, thread: discord.Thread) -> None:
+        m = await r.get(key=f"m:{self.message.id}", type="JSON")
+        if m is None: return
+        # Assign thread
+        await r.set(
+            key=f"m:{self.message.id}",
+            type="JSON",
+            path="$.thread",
+            value=None if thread.type not in self.threads else {
+                'name': str(thread.name),
+                'type': str(thread.type),
+                'id': str(thread.id)
+            }
+        )
     
     
     
