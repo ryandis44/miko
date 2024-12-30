@@ -364,6 +364,20 @@ class PlayerButtons(discord.ui.View):
     
 
 
+    @discord.ui.button(style=discord.ButtonStyle.red, emoji='⏹️', custom_id='stop_song', disabled=False, row=2)
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        mc = MikoCore()
+        await mc.user_ainit(user=interaction.user, client=self.player.client)
+        await interaction.response.edit_message()
+        await self.player.stop(
+            reason={
+                'trigger': 'user_stop',
+                'user': mc
+            }
+        )
+    
+
+
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji='⏹️', custom_id='stop_song', disabled=False, row=2)
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         mc = MikoCore()
