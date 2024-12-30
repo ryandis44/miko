@@ -26,6 +26,7 @@ class MikoPlayer(mafic.Player):
         self.msg: discord.Message = None
         self.__last_reposition: int = 0
         self.__lock = asyncio.Lock() # to prevent multiple players being sent at once
+        self.__stop_lock = asyncio.Lock() # to prevent multiple stops being sent at once
         
         # a list of dictionaries containing a MikoCore object, a source dict, and a mafic.Track object
         self.queue: List[Dict[str, Union[MikoCore, dict, mafic.Track]]] = []
@@ -148,52 +149,96 @@ class MikoPlayer(mafic.Player):
     
     
     async def stop(self, reason: dict = None) -> None:
-        desc = f"Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again."
+        async with self.__stop_lock:
         
-        if self.msg.embeds:
-            if self.msg.embeds[0].description == desc: return
-        
-        if not reason: reason = {'trigger': 'queue_complete'}
-        
-        match reason['trigger']:
+            desc = f"Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again."
             
-            case 'queue_complete':
-                name = "Queue complete"
-                icon_url = self.client.user.avatar
+            # Section to prevent the stop embed from being modified by multiple stops
+            if self.msg.embeds:
+                
+                # If the embed is already a stop embed, return
+                if self.msg.embeds[0].description == desc: return
+                
+                # If the embed is a "not playing" embed, return unless
+                # 'disconnect' has been pressed.
+                if self.msg.embeds[0].author and reason['trigger'] not in ['user_stop']:
+                    if "not playing" in self.msg.embeds[0].author.name.lower():
+                        return
             
-            case 'user_stop':
-                name = f"Playback stopped by {reason['user'].user.username}"
-                icon_url = reason['user'].user.miko_avatar
+            if not reason: reason = {'trigger': 'queue_complete'}
             
-            case 'disconnect_vc':
-                name = "Disconnected from voice channel by an admin"
-                icon_url = self.client.user.avatar
+            match reason['trigger']:
+                
+                case 'queue_complete':
+                    name = "Queue complete"
+                    icon_url = self.client.user.avatar
+                
+                case 'user_stop':
+                    if self.current is not None:
+                        name = f"Playback stopped by {reason['user'].user.username}"
+                        icon_url = reason['user'].user.miko_avatar
+                    else:
+                        if self.msg.embeds:
+                            if "cleared by" in self.msg.embeds[0].description:
+                                desc = self.msg.embeds[0].description[0:self.msg.embeds[0].description.index("or") - 1] + "." # remove the "or press disconnect" part
+                        name = "Queue complete."
+                        icon_url = self.client.user.avatar
+                
+                case 'disconnect_vc':
+                    name = "Disconnected from voice channel by an admin"
+                    icon_url = self.client.user.avatar
+                
+                case 'clear_queue':
+                    name = "Not playing"
+                    icon_url = self.client.user.avatar
+                    desc = f"> Queue cleared by <@{reason['user'].user.user.id}>.\n\n\
+                        Use {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} to start playing music again or \
+                            press disconnect to leave the voice channel."
+                
+                case 'queue_end':
+                    name = "Not playing"
+                    icon_url = self.client.user.avatar
+                    desc = f"> Queue complete.\n\nUse {self.mc.tunables('SLASH_COMMAND_SUGGEST_PLAY')} \
+                        to start playing music again or \
+                            press disconnect to leave the voice channel."
+                
+                case 'bot_restart':
+                    pass # TODO
             
-            case 'bot_restart':
-                pass # TODO
-        
-        __embed = discord.Embed(
-            color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
-            description=desc
-        )
-        __embed.set_author(
-            name=name,
-            icon_url=icon_url
-        )
-        
-        try:
-            self.msg = await self.msg.edit(
-                content=None,
-                embed=__embed,
-                view=None
+            __disconnect_embed = discord.Embed(
+                color=self.mc.tunables('GLOBAL_EMBED_COLOR'),
+                description=desc
             )
-        except: pass
-        
-        self.queue.clear()
-        try: await super().stop()
-        except: pass
-        try: await super().disconnect(force=True)
-        except: pass
+            __disconnect_embed.set_author(
+                name=name,
+                icon_url=icon_url
+            )
+            
+            if reason['trigger'] not in ['clear_queue', 'queue_end']:
+                try:
+                    self.msg = await self.msg.edit(
+                        content=None,
+                        embed=__disconnect_embed,
+                        view=None if reason['trigger'] not in ['clear_queue', 'queue_end'] else PlayerButtons(player=self)
+                    )
+                except: pass
+            
+            self.queue.clear()
+            try: await super().stop()
+            except: pass
+
+            if reason['trigger'] in ['clear_queue', 'queue_end']:
+                try:
+                    self.msg = await self.msg.edit(
+                        content=None,
+                        embed=__disconnect_embed,
+                        view=PlayerButtons(player=self)
+                    )
+                except: pass
+                
+            if reason['trigger'] in ['clear_queue', 'queue_end']: return
+            try: await super().disconnect(force=True)
+            except: pass
     
     
     
@@ -207,7 +252,7 @@ class MikoPlayer(mafic.Player):
             except: await self.mc.guild_ainit(client=self.client, guild=self.channel.guild)
             
             if reposition:
-                if self.__last_reposition + 5 <= int(time.time()): await asyncio.sleep(5)
+                if self.__last_reposition + 5 <= int(time.time()): await asyncio.sleep(self.mc.tunables('MUSIC_PLAYER_REPOSITION_DELAY'))
                 await self.reposition()
             
             else:
@@ -334,7 +379,14 @@ async def track_end(event: mafic.TrackEndEvent) -> None:
     assert isinstance(event.player, MikoPlayer)
     if len(event.player.queue) > 0:
         await event.player.play(event.player.queue.pop(0))
-    else: await event.player.stop()
+    else:
+        
+        
+        await event.player.stop(
+            reason={
+                'trigger': 'queue_end',
+            }
+        )
 
 
 
@@ -355,17 +407,20 @@ class PlayerButtons(discord.ui.View):
         next = [x for x in self.children if x.custom_id=="next_song"][0]
         vol = [x for x in self.children if x.custom_id=="volume"][0]
         queue = [x for x in self.children if x.custom_id=="full_queue"][0]
+        stop_song = [x for x in self.children if x.custom_id=="stop_song"][0]
+        volume = [x for x in self.children if x.custom_id=="volume"][0]
 
         stop.disabled = False
         pause_play.emoji = '⏸️' if not self.player.paused else '▶️'
         next.disabled = True if self.player.queue == [] else False
         vol.disabled = False
+        stop_song.disabled = pause_play.disabled = volume.disabled = self.player.current is None
         queue.disabled = True if len(self.player.queue) <= self.player.mc.tunables('MUSIC_PLAYER_MAX_VISIBLE_QUEUE_TRACKS') else False
     
 
 
-    @discord.ui.button(style=discord.ButtonStyle.red, emoji='⏹️', custom_id='stop_song', disabled=False, row=2)
-    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(style=discord.ButtonStyle.danger, label="DC", custom_id='disconnect', disabled=False, row=2)
+    async def disconnect(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         mc = MikoCore()
         await mc.user_ainit(user=interaction.user, client=self.player.client)
         await interaction.response.edit_message()
@@ -385,7 +440,7 @@ class PlayerButtons(discord.ui.View):
         await interaction.response.edit_message()
         await self.player.stop(
             reason={
-                'trigger': 'user_stop',
+                'trigger': 'clear_queue',
                 'user': mc
             }
         )
