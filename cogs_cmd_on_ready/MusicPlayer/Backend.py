@@ -161,9 +161,8 @@ class MikoPlayer(mafic.Player):
                 
                 # If the embed is a "not playing" embed, return unless
                 # 'disconnect' has been pressed.
-                if self.msg.embeds[0].author and reason['trigger'] not in ['user_stop']:
-                    if "not playing" in self.msg.embeds[0].author.name.lower():
-                        return
+                if self.msg.embeds[0].author and reason['trigger'] not in ['user_stop', 'disconnect_vc']:
+                    if "not playing" in self.msg.embeds[0].author.name.lower(): return
             
             if not reason: reason = {'trigger': 'queue_complete'}
             
@@ -185,8 +184,15 @@ class MikoPlayer(mafic.Player):
                         icon_url = self.client.user.avatar
                 
                 case 'disconnect_vc':
-                    name = "Disconnected from voice channel by an admin"
-                    icon_url = self.client.user.avatar
+                    if self.current is not None:
+                        name = "Disconnected from voice channel by an admin"
+                        icon_url = self.client.user.avatar
+                    else:
+                        if self.msg.embeds:
+                            if "cleared by" in self.msg.embeds[0].description:
+                                desc = self.msg.embeds[0].description[0:self.msg.embeds[0].description.index("or") - 1] + "." # remove the "or press disconnect" part
+                        name = "Queue complete."
+                        icon_url = self.client.user.avatar
                 
                 case 'clear_queue':
                     name = "Not playing"
